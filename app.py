@@ -203,7 +203,7 @@ def activate():
             db.mark_key_failed(key_id)
             message = '激活失败'
             if isinstance(result, dict):
-                message = result.get('message', message)
+                message = result.get('message') or result.get('error') or result.get('msg') or message
             return jsonify({
                 'success': False,
                 'error': message,
