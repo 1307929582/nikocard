@@ -5,7 +5,7 @@ from functools import wraps
 import os
 
 app = Flask(__name__)
-app.secret_key = os.urandom(24)
+app.secret_key = os.environ.get('SECRET_KEY', os.urandom(24))
 
 API_REDEEM = 'https://mercury.wxie.de/api/keys/redeem'
 API_QUERY = 'https://mercury.wxie.de/api/keys/query'
