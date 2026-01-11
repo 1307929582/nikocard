@@ -10,6 +10,69 @@ app.secret_key = os.environ.get('SECRET_KEY', os.urandom(24))
 API_REDEEM = 'https://mercury.wxie.de/api/keys/redeem'
 API_QUERY = 'https://mercury.wxie.de/api/keys/query'
 
+def _extract_status(payload):
+    if not isinstance(payload, dict):
+        return None
+    for path in (
+        ('status',),
+        ('key', 'status'),
+        ('data', 'status'),
+        ('key_info', 'status'),
+        ('result', 'status'),
+    ):
+        cur = payload
+        ok = True
+        for key in path:
+            if isinstance(cur, dict) and key in cur:
+                cur = cur[key]
+            else:
+                ok = False
+                break
+        if ok and cur is not None:
+            return cur
+    return None
+
+def _interpret_query_result(payload):
+    if not isinstance(payload, dict):
+        return None
+
+    for flag in ('valid', 'is_valid', 'available'):
+        if flag in payload:
+            return bool(payload[flag])
+
+    success = payload.get('success')
+    if success is False:
+        return False
+
+    status = _extract_status(payload)
+    if status is not None:
+        status_text = str(status).strip().lower()
+        if status_text in ('unused', 'valid', 'available', 'active', 'ok', 'success'):
+            return True
+        if status_text in ('used', 'invalid', 'expired', 'disabled', 'redeemed', 'fail', 'failed'):
+            return False
+
+    msg = payload.get('message') or payload.get('msg') or ''
+    if isinstance(msg, str) and msg:
+        msg_lower = msg.lower()
+        if any(term in msg_lower for term in ('invalid', 'expired', 'used', 'redeem', 'fail', 'error')):
+            return False
+        if any(term in msg_lower for term in ('valid', 'unused', 'available', 'ok', 'success')):
+            return True
+
+    if success is True:
+        return True
+    return None
+
+def _check_key_validity(key_id):
+    try:
+        resp = requests.post(API_QUERY, json={'key_id': key_id},
+                             headers={'Content-Type': 'application/json'}, timeout=20)
+        result = resp.json()
+    except Exception:
+        return None
+    return _interpret_query_result(result)
+
 def login_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
@@ -76,12 +139,34 @@ def settings():
 @app.route('/api/import', methods=['POST'])
 @login_required
 def import_keys():
-    data = request.get_json()
+    data = request.get_json() or {}
     keys_text = data.get('keys', '')
-    key_list = keys_text.strip().split('\n')
-    added = db.import_keys(key_list)
+    raw_list = keys_text.strip().split('\n') if keys_text else []
+    key_list = [key_id.strip() for key_id in raw_list if key_id.strip()]
+
+    valid_keys = []
+    invalid = 0
+    unchecked = 0
+
+    for key_id in key_list:
+        verdict = _check_key_validity(key_id)
+        if verdict is True:
+            valid_keys.append(key_id)
+        elif verdict is False:
+            invalid += 1
+        else:
+            unchecked += 1
+
+    added = db.import_keys(valid_keys)
     stats = db.get_stats()
-    return jsonify({'success': True, 'added': added, 'stats': stats})
+    return jsonify({
+        'success': True,
+        'added': added,
+        'invalid': invalid,
+        'unchecked': unchecked,
+        'total': len(key_list),
+        'stats': stats
+    })
 
 @app.route('/api/activate', methods=['POST'])
 @login_required

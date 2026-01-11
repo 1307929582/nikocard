@@ -106,7 +106,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 const data = await resp.json();
 
                 if (data.success) {
-                    showToast(`成功导入 ${data.added} 个卡密`, 'success');
+                    let message = `成功导入 ${data.added} 个卡密`;
+                    if (data.invalid) {
+                        message += `，无效 ${data.invalid} 个`;
+                    }
+                    if (data.unchecked) {
+                        message += `，校验失败 ${data.unchecked} 个`;
+                    }
+                    showToast(message, 'success');
                     keysInput.value = '';
                     updateStats(data.stats);
                 } else {
