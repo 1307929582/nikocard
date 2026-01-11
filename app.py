@@ -327,13 +327,14 @@ def import_keys():
             unchecked += 1
             unchecked_keys.append(key_id)
 
-    added = db.import_keys_for_provider(valid_keys + unchecked_keys, provider_id)
+    added, skipped = db.import_keys_for_provider(valid_keys + unchecked_keys, provider_id)
     stats = db.get_stats()
     return jsonify({
         'success': True,
         'added': added,
         'invalid': invalid,
         'unchecked': unchecked,
+        'skipped': skipped,
         'total': len(key_list),
         'stats': stats
     })

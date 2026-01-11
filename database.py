@@ -120,6 +120,7 @@ def import_keys(key_list):
 def import_keys_for_provider(key_list, provider_id):
     conn = get_db()
     added = 0
+    skipped = 0
     for key_id in key_list:
         key_id = key_id.strip()
         if key_id:
@@ -130,10 +131,10 @@ def import_keys_for_provider(key_list, provider_id):
                 )
                 added += 1
             except sqlite3.IntegrityError:
-                pass
+                skipped += 1
     conn.commit()
     conn.close()
-    return added
+    return added, skipped
 
 def get_stats():
     conn = get_db()

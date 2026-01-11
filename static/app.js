@@ -222,11 +222,14 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 if (data.success) {
                     let message = `成功导入 ${data.added} 个卡密`;
+                    if (data.skipped) {
+                        message += `，重复 ${data.skipped} 个`;
+                    }
                     if (data.invalid) {
                         message += `，无效 ${data.invalid} 个`;
                     }
                     if (data.unchecked) {
-                        message += `，校验失败 ${data.unchecked} 个`;
+                        message += `，未校验 ${data.unchecked} 个`;
                     }
                     showToast(message, 'success');
                     keysInput.value = '';
