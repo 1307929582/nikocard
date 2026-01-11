@@ -74,6 +74,42 @@
                             <button type="submit" class="btn-secondary">创建卡商</button>
                         </form>
                     </div>
+
+                    <div class="provider-panel">
+                        <h2>卡商列表</h2>
+                        <div id="provider-list" class="provider-list">
+                            {% if providers %}
+                                {% for p in providers %}
+                                <div class="provider-item" data-id="{{ p.id }}">
+                                    <div class="field">
+                                        <label>卡商名称</label>
+                                        <input type="text" class="provider-name" value="{{ p.name }}" required>
+                                    </div>
+                                    <div class="field">
+                                        <label>激活接口</label>
+                                        <input type="url" class="provider-redeem" value="{{ p.redeem_url }}" required>
+                                    </div>
+                                    <div class="field">
+                                        <label>查询接口</label>
+                                        <input type="url" class="provider-query" value="{{ p.query_url or '' }}">
+                                    </div>
+                                    <div class="provider-stats">
+                                        <span>未使用 {{ p.unused }}</span>
+                                        <span>已使用 {{ p.used }}</span>
+                                        <span>失败 {{ p.failed }}</span>
+                                        <span>总数 {{ p.total }}</span>
+                                    </div>
+                                    <div class="provider-actions">
+                                        <button class="btn-secondary" data-action="save" type="button">保存</button>
+                                        <button class="btn-danger" data-action="delete" type="button" {% if p.total > 0 %}disabled{% endif %}>删除</button>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            {% else %}
+                                <div class="empty-hint">暂无卡商</div>
+                            {% endif %}
+                        </div>
+                    </div>
                 </div>
 
                 <div class="settings-panel">

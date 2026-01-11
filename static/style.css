@@ -233,7 +233,8 @@ a {
 }
 
 .btn-primary:disabled,
-.btn-secondary:disabled {
+.btn-secondary:disabled,
+.btn-danger:disabled {
     opacity: 0.65;
     cursor: not-allowed;
     transform: none;
@@ -418,6 +419,33 @@ a {
 .provider-form {
     display: grid;
     gap: 12px;
+}
+
+.provider-list {
+    display: grid;
+    gap: 16px;
+}
+
+.provider-item {
+    border-radius: 16px;
+    padding: 16px;
+    border: 1px solid rgba(0, 0, 0, 0.12);
+    background: rgba(255, 255, 255, 0.7);
+    display: grid;
+    gap: 12px;
+}
+
+.provider-stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 16px;
+    color: var(--text-secondary);
+    font-size: 13px;
+}
+
+.provider-actions {
+    display: flex;
+    gap: 10px;
 }
 
 .field {
@@ -704,6 +732,23 @@ a {
 .btn-secondary:hover {
     background: rgba(0, 0, 0, 0.05);
     border-color: rgba(0, 0, 0, 0.9);
+}
+
+.btn-danger {
+    padding: 12px 20px;
+    border-radius: 12px;
+    border: 1px solid rgba(0, 0, 0, 0.5);
+    background: rgba(0, 0, 0, 0.08);
+    color: var(--text-primary);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-danger:hover:not(:disabled) {
+    background: rgba(0, 0, 0, 0.14);
+    border-color: rgba(0, 0, 0, 0.7);
 }
 
 .activate-panel {

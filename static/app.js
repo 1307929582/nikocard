@@ -7,6 +7,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const providerSelect = document.getElementById('provider-select');
     const activateProvider = document.getElementById('activate-provider');
     const providerForm = document.getElementById('provider-form');
+    const providerList = document.getElementById('provider-list');
 
     let countdownInterval = null;
     let currentCard = null;
@@ -157,20 +158,24 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
                 const data = await resp.json();
 
-            if (data.success) {
-                showToast('激活成功！', 'success');
-                displayCard(data.card);
-                if (data.stats) updateStats(data.stats);
-                setTimeout(() => location.reload(), 500);
-            } else {
-                console.error('激活失败', data);
-                showToast(data.error || '激活失败', 'error');
-                if (data.stats) updateStats(data.stats);
+                if (data.success) {
+                    if (data.skipped_used) {
+                        showToast(`激活成功，已跳过 ${data.skipped_used} 张已使用卡密`, 'success');
+                    } else {
+                        showToast('激活成功！', 'success');
+                    }
+                    displayCard(data.card);
+                    if (data.stats) updateStats(data.stats);
+                    setTimeout(() => location.reload(), 500);
+                } else {
+                    console.error('激活失败', data);
+                    showToast(data.error || '激活失败', 'error');
+                    if (data.stats) updateStats(data.stats);
+                }
+            } catch (e) {
+                console.error('激活请求异常', e);
+                showToast('网络错误', 'error');
             }
-        } catch (e) {
-            console.error('激活请求异常', e);
-            showToast('网络错误', 'error');
-        }
 
             btnActivate.disabled = false;
             btnActivate.innerHTML = `
@@ -216,6 +221,71 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             } catch (e) {
                 showToast('网络错误', 'error');
+            }
+        });
+    }
+
+    if (providerList) {
+        providerList.addEventListener('click', async function(e) {
+            const target = e.target;
+            if (!(target instanceof HTMLElement)) return;
+            const action = target.dataset.action;
+            if (!action) return;
+            const item = target.closest('.provider-item');
+            if (!item) return;
+            const providerId = item.dataset.id;
+            if (!providerId) return;
+
+            const nameEl = item.querySelector('.provider-name');
+            const redeemEl = item.querySelector('.provider-redeem');
+            const queryEl = item.querySelector('.provider-query');
+            const name = nameEl ? nameEl.value.trim() : '';
+            const redeem = redeemEl ? redeemEl.value.trim() : '';
+            const query = queryEl ? queryEl.value.trim() : '';
+
+            if (action === 'save') {
+                if (!name || !redeem) {
+                    showToast('请输入卡商名称和激活接口', 'error');
+                    return;
+                }
+                try {
+                    const resp = await fetch(`/api/providers/${providerId}`, {
+                        method: 'PATCH',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            name: name,
+                            redeem_url: redeem,
+                            query_url: query
+                        })
+                    });
+                    const data = await resp.json();
+                    if (data.success) {
+                        showToast('卡商已更新', 'success');
+                        setTimeout(() => location.reload(), 400);
+                    } else {
+                        showToast(data.error || '更新失败', 'error');
+                    }
+                } catch (e) {
+                    showToast('网络错误', 'error');
+                }
+            }
+
+            if (action === 'delete') {
+                if (!confirm('确定要删除该卡商吗？')) return;
+                try {
+                    const resp = await fetch(`/api/providers/${providerId}`, {
+                        method: 'DELETE'
+                    });
+                    const data = await resp.json();
+                    if (data.success) {
+                        showToast('卡商已删除', 'success');
+                        setTimeout(() => location.reload(), 400);
+                    } else {
+                        showToast(data.error || '删除失败', 'error');
+                    }
+                } catch (e) {
+                    showToast('网络错误', 'error');
+                }
             }
         });
     }

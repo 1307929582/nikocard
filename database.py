@@ -216,6 +216,26 @@ def get_providers():
     conn.close()
     return [dict(row) for row in rows]
 
+def get_provider_stats():
+    conn = get_db()
+    rows = conn.execute('''
+        SELECT
+            p.id,
+            p.name,
+            p.redeem_url,
+            p.query_url,
+            COALESCE(SUM(CASE WHEN k.status = 'unused' THEN 1 ELSE 0 END), 0) AS unused,
+            COALESCE(SUM(CASE WHEN k.status = 'used' THEN 1 ELSE 0 END), 0) AS used,
+            COALESCE(SUM(CASE WHEN k.status = 'failed' THEN 1 ELSE 0 END), 0) AS failed,
+            COUNT(k.id) AS total
+        FROM providers p
+        LEFT JOIN keys k ON k.provider_id = p.id
+        GROUP BY p.id
+        ORDER BY p.id ASC
+    ''').fetchall()
+    conn.close()
+    return [dict(row) for row in rows]
+
 def get_provider(provider_id):
     conn = get_db()
     row = conn.execute(
@@ -238,3 +258,30 @@ def add_provider(name, redeem_url, query_url=None):
     ).fetchone()
     conn.close()
     return dict(row) if row else None
+
+def update_provider(provider_id, name, redeem_url, query_url=None):
+    conn = get_db()
+    conn.execute(
+        "UPDATE providers SET name = ?, redeem_url = ?, query_url = ? WHERE id = ?",
+        (name, redeem_url, query_url, provider_id)
+    )
+    conn.commit()
+    row = conn.execute(
+        "SELECT id, name, redeem_url, query_url FROM providers WHERE id = ?",
+        (provider_id,)
+    ).fetchone()
+    conn.close()
+    return dict(row) if row else None
+
+def delete_provider(provider_id):
+    conn = get_db()
+    count = conn.execute(
+        "SELECT COUNT(*) FROM keys WHERE provider_id = ?",
+        (provider_id,)
+    ).fetchone()[0]
+    if count > 0:
+        conn.close()
+        raise ValueError('该卡商下仍有卡密，无法删除')
+    conn.execute("DELETE FROM providers WHERE id = ?", (provider_id,))
+    conn.commit()
+    conn.close()

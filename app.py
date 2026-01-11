@@ -70,6 +70,12 @@ def _interpret_query_result(payload):
         return True
     return None
 
+def _is_used_error(message):
+    if not message:
+        return False
+    msg = str(message).lower()
+    return any(term in msg for term in ('已被使用', '已使用', '被使用', 'used', 'redeemed'))
+
 def _check_key_validity(key_id, query_url):
     try:
         resp = requests.post(query_url, json={'key_id': key_id},
@@ -141,7 +147,7 @@ def dashboard():
 @app.route('/settings')
 @login_required
 def settings():
-    providers = db.get_providers()
+    providers = db.get_provider_stats()
     return render_template('settings.html', providers=providers)
 
 @app.route('/api/providers', methods=['POST'])
@@ -164,6 +170,38 @@ def create_provider():
         return jsonify({'success': False, 'error': msg})
 
     return jsonify({'success': True, 'provider': provider})
+
+@app.route('/api/providers/<int:provider_id>', methods=['PATCH'])
+@login_required
+def update_provider(provider_id):
+    data = request.get_json() or {}
+    name = (data.get('name') or '').strip()
+    redeem_url = (data.get('redeem_url') or '').strip()
+    query_url = (data.get('query_url') or '').strip()
+
+    if not name or not redeem_url:
+        return jsonify({'success': False, 'error': '请输入卡商名称和激活接口'})
+
+    try:
+        provider = db.update_provider(provider_id, name, redeem_url, query_url or None)
+    except Exception as e:
+        msg = str(e)
+        if 'UNIQUE' in msg:
+            return jsonify({'success': False, 'error': '卡商名称已存在'})
+        return jsonify({'success': False, 'error': msg})
+
+    if not provider:
+        return jsonify({'success': False, 'error': '卡商不存在'})
+    return jsonify({'success': True, 'provider': provider})
+
+@app.route('/api/providers/<int:provider_id>', methods=['DELETE'])
+@login_required
+def delete_provider(provider_id):
+    try:
+        db.delete_provider(provider_id)
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+    return jsonify({'success': True})
 
 @app.route('/api/import', methods=['POST'])
 @login_required
@@ -232,59 +270,71 @@ def activate():
     if not provider.get('redeem_url'):
         return jsonify({'success': False, 'error': '卡商未配置激活接口'})
 
-    key_id = db.get_unused_key(provider_id)
-    if not key_id:
-        return jsonify({'success': False, 'error': '没有可用的卡密'})
-    try:
-        resp = requests.post(provider['redeem_url'], json={'key_id': key_id}, headers={'Content-Type': 'application/json'}, timeout=30)
-        raw_text = resp.text
+    skipped = 0
+    while True:
+        key_id = db.get_unused_key(provider_id)
+        if not key_id:
+            return jsonify({'success': False, 'error': '没有可用的卡密', 'stats': db.get_stats()})
         try:
-            result = resp.json()
-        except Exception:
-            result = None
+            resp = requests.post(
+                provider['redeem_url'],
+                json={'key_id': key_id},
+                headers={'Content-Type': 'application/json'},
+                timeout=30
+            )
+            raw_text = resp.text
+            try:
+                result = resp.json()
+            except Exception:
+                result = None
 
-        if isinstance(result, dict) and result.get('success'):
-            card = result.get('card', {})
-            db.mark_key_used(key_id, provider_id)
-            db.save_card(key_id, card)
-            return jsonify({
-                'success': True,
-                'card': {
-                    'pan': card.get('pan'),
-                    'cvv': card.get('cvv'),
-                    'exp_month': card.get('exp_month'),
-                    'exp_year': card.get('exp_year'),
-                    'card_type': card.get('card_type'),
-                    'expire_time': card.get('expire_time')
-                },
-                'expire_minutes': result.get('expire_minutes', 60),
-                'stats': db.get_stats()
-            })
-        else:
+            if isinstance(result, dict) and result.get('success'):
+                card = result.get('card', {})
+                db.mark_key_used(key_id, provider_id)
+                db.save_card(key_id, card)
+                return jsonify({
+                    'success': True,
+                    'card': {
+                        'pan': card.get('pan'),
+                        'cvv': card.get('cvv'),
+                        'exp_month': card.get('exp_month'),
+                        'exp_year': card.get('exp_year'),
+                        'card_type': card.get('card_type'),
+                        'expire_time': card.get('expire_time')
+                    },
+                    'expire_minutes': result.get('expire_minutes', 60),
+                    'stats': db.get_stats(),
+                    'skipped_used': skipped
+                })
+            else:
+                db.mark_key_failed(key_id, provider_id)
+                message = '激活失败'
+                if isinstance(result, dict):
+                    message = result.get('message') or result.get('error') or result.get('msg') or message
+                used_error = _is_used_error(message) or _is_used_error(raw_text)
+                if used_error:
+                    skipped += 1
+                    continue
+                return jsonify({
+                    'success': False,
+                    'error': message,
+                    'stats': db.get_stats(),
+                    'debug': {
+                        'status_code': resp.status_code,
+                        'response': result,
+                        'raw': raw_text[:2000] if raw_text else None
+                    }
+                })
+        except Exception as e:
             db.mark_key_failed(key_id, provider_id)
-            message = '激活失败'
-            if isinstance(result, dict):
-                message = result.get('message') or result.get('error') or result.get('msg') or message
             return jsonify({
                 'success': False,
-                'error': message,
+                'error': str(e),
                 'stats': db.get_stats(),
                 'debug': {
-                    'status_code': resp.status_code,
-                    'response': result,
-                    'raw': raw_text[:2000] if raw_text else None
+                    'exception': str(e)
                 }
             })
-    except Exception as e:
-        db.mark_key_failed(key_id, provider_id)
-        return jsonify({
-            'success': False,
-            'error': str(e),
-            'stats': db.get_stats(),
-            'debug': {
-                'exception': str(e)
-            }
-        })
 
 @app.route('/api/stats')
 @login_required
