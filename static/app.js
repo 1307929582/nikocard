@@ -75,7 +75,7 @@ document.addEventListener('DOMContentLoaded', function() {
             return `
                 <tr>
                     <td><input type="checkbox" class="keys-checkbox" data-id="${item.id}"></td>
-                    <td class="copyable" data-copy="key">${item.key_id || ''}</td>
+                    <td class="keys-key copyable" data-copy="key">${item.key_id || ''}</td>
                     <td>${item.provider_name || '-'}</td>
                     <td><span class="keys-status ${status}">${statusLabel}</span></td>
                     <td>${formatDate(item.created_at)}</td>

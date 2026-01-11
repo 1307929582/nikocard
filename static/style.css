@@ -542,6 +542,14 @@ a {
     background: rgba(0, 0, 0, 0.65);
 }
 
+.panel-surface {
+    background: var(--panel);
+    border-radius: 18px;
+    padding: 16px;
+    border: 1px solid var(--stroke);
+    backdrop-filter: blur(14px);
+}
+
 .keys-hero {
     display: flex;
     justify-content: space-between;
@@ -563,6 +571,10 @@ a {
 .keys-summary {
     font-size: 13px;
     color: var(--text-secondary);
+    background: rgba(0, 0, 0, 0.04);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    padding: 8px 12px;
+    border-radius: 999px;
 }
 
 .keys-toolbar {
@@ -577,12 +589,13 @@ a {
     display: flex;
     gap: 10px;
     align-items: center;
+    justify-content: flex-start;
 }
 
 .keys-table-section {
     background: var(--panel);
     border-radius: 18px;
-    padding: 12px;
+    padding: 0;
     border: 1px solid var(--stroke);
     backdrop-filter: blur(14px);
     overflow-x: auto;
@@ -607,16 +620,30 @@ a {
     font-size: 12px;
     text-transform: uppercase;
     letter-spacing: 0.6px;
+    background: rgba(0, 0, 0, 0.04);
+}
+
+.keys-table th:first-child {
+    border-top-left-radius: 18px;
+}
+
+.keys-table th:last-child {
+    border-top-right-radius: 18px;
 }
 
 .keys-table tbody tr:hover {
-    background: rgba(0, 0, 0, 0.03);
+    background: rgba(0, 0, 0, 0.035);
 }
 
 .keys-empty {
     text-align: center;
     padding: 18px 12px;
     color: var(--text-secondary);
+}
+
+.keys-key {
+    font-family: var(--font-mono);
+    font-size: 12px;
 }
 
 .keys-status {
@@ -632,14 +659,15 @@ a {
 
 .keys-status.unused {
     border-color: rgba(0, 0, 0, 0.2);
+    background: rgba(0, 0, 0, 0.05);
 }
 
 .keys-status.used {
-    background: rgba(0, 0, 0, 0.08);
+    background: rgba(0, 0, 0, 0.1);
 }
 
 .keys-status.failed {
-    background: rgba(0, 0, 0, 0.12);
+    background: rgba(0, 0, 0, 0.14);
 }
 
 .keys-pagination {
@@ -648,6 +676,12 @@ a {
     align-items: center;
     gap: 12px;
     margin-top: 18px;
+}
+
+.keys-table .btn-danger {
+    padding: 6px 12px;
+    font-size: 12px;
+    border-radius: 10px;
 }
 
 .main-content > section:nth-child(2) {
