@@ -41,8 +41,6 @@ def _interpret_query_result(payload):
             return bool(payload[flag])
 
     success = payload.get('success')
-    if success is False:
-        return False
 
     status = _extract_status(payload)
     if status is not None:
@@ -51,13 +49,21 @@ def _interpret_query_result(payload):
             return True
         if status_text in ('used', 'invalid', 'expired', 'disabled', 'redeemed', 'fail', 'failed'):
             return False
+        if any(term in status_text for term in ('未使用', '有效')):
+            return True
+        if any(term in status_text for term in ('已使用', '无效', '过期', '禁用')):
+            return False
 
-    msg = payload.get('message') or payload.get('msg') or ''
+    msg = payload.get('message') or payload.get('error') or payload.get('msg') or ''
     if isinstance(msg, str) and msg:
         msg_lower = msg.lower()
         if any(term in msg_lower for term in ('invalid', 'expired', 'used', 'redeem', 'fail', 'error')):
             return False
         if any(term in msg_lower for term in ('valid', 'unused', 'available', 'ok', 'success')):
+            return True
+        if any(term in msg for term in ('已使用', '无效', '过期', '禁用', '被使用')):
+            return False
+        if any(term in msg for term in ('有效', '未使用', '可用')):
             return True
 
     if success is True:
@@ -145,6 +151,7 @@ def import_keys():
     key_list = [key_id.strip() for key_id in raw_list if key_id.strip()]
 
     valid_keys = []
+    unchecked_keys = []
     invalid = 0
     unchecked = 0
 
@@ -156,8 +163,9 @@ def import_keys():
             invalid += 1
         else:
             unchecked += 1
+            unchecked_keys.append(key_id)
 
-    added = db.import_keys(valid_keys)
+    added = db.import_keys(valid_keys + unchecked_keys)
     stats = db.get_stats()
     return jsonify({
         'success': True,
