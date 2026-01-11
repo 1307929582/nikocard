@@ -28,47 +28,47 @@
         </header>
 
         <main class="main-content">
-            <section class="stats-section">
-                <div class="stat-card">
-                    <div class="stat-icon unused">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M20 6L9 17l-5-5"/>
-                        </svg>
+            <section class="overview-section">
+                <div class="stats-section">
+                    <div class="stat-card">
+                        <div class="stat-icon unused">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M20 6L9 17l-5-5"/>
+                            </svg>
+                        </div>
+                        <div class="stat-info">
+                            <span class="stat-value" id="stat-unused">{{ stats.unused }}</span>
+                            <span class="stat-label">未使用</span>
+                        </div>
                     </div>
-                    <div class="stat-info">
-                        <span class="stat-value" id="stat-unused">{{ stats.unused }}</span>
-                        <span class="stat-label">未使用</span>
+                    <div class="stat-card">
+                        <div class="stat-icon used">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="1" y="4" width="22" height="16" rx="2" ry="2"/>
+                                <line x1="1" y1="10" x2="23" y2="10"/>
+                            </svg>
+                        </div>
+                        <div class="stat-info">
+                            <span class="stat-value" id="stat-used">{{ stats.used }}</span>
+                            <span class="stat-label">已使用</span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon total">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+                            </svg>
+                        </div>
+                        <div class="stat-info">
+                            <span class="stat-value" id="stat-total">{{ stats.total }}</span>
+                            <span class="stat-label">总数</span>
+                        </div>
                     </div>
                 </div>
-                <div class="stat-card">
-                    <div class="stat-icon used">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <rect x="1" y="4" width="22" height="16" rx="2" ry="2"/>
-                            <line x1="1" y1="10" x2="23" y2="10"/>
-                        </svg>
-                    </div>
-                    <div class="stat-info">
-                        <span class="stat-value" id="stat-used">{{ stats.used }}</span>
-                        <span class="stat-label">已使用</span>
-                    </div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon total">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
-                        </svg>
-                    </div>
-                    <div class="stat-info">
-                        <span class="stat-value" id="stat-total">{{ stats.total }}</span>
-                        <span class="stat-label">总数</span>
-                    </div>
-                </div>
-            </section>
 
-            <section class="action-section compact">
-                <div class="activate-panel">
+                <div class="activate-panel compact-panel">
                     <h2>一键激活</h2>
-                    <p>点击下方按钮自动激活一张卡</p>
+                    <p>选择卡商并激活一张卡</p>
                     <div class="provider-select">
                         <label for="activate-provider">选择卡商</label>
                         {% if providers %}

@@ -566,6 +566,18 @@ a {
     margin-bottom: 40px;
 }
 
+.overview-section {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(240px, 360px);
+    gap: 24px;
+    align-items: start;
+    margin-bottom: 40px;
+}
+
+.overview-section .stats-section {
+    margin-bottom: 0;
+}
+
 .stat-card {
     background: var(--panel);
     border-radius: 20px;
@@ -776,6 +788,29 @@ a {
 .provider-select label {
     font-size: 12px;
     color: var(--text-secondary);
+}
+
+.compact-panel {
+    align-items: flex-start;
+    justify-content: flex-start;
+    text-align: left;
+    padding: 18px 20px;
+}
+
+.compact-panel h2 {
+    font-size: 16px;
+    margin-bottom: 6px;
+}
+
+.compact-panel p {
+    margin-bottom: 12px;
+}
+
+.compact-panel .btn-activate {
+    width: 100%;
+    justify-content: center;
+    padding: 12px 24px;
+    font-size: 16px;
 }
 
 .btn-activate {
@@ -1098,6 +1133,10 @@ a {
 
     .action-section.compact {
         justify-content: stretch;
+    }
+
+    .overview-section {
+        grid-template-columns: 1fr;
     }
 
     .settings-grid {
