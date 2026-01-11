@@ -176,8 +176,13 @@ def activate():
         return jsonify({'success': False, 'error': '没有可用的卡密'})
     try:
         resp = requests.post(API_REDEEM, json={'key_id': key_id}, headers={'Content-Type': 'application/json'}, timeout=30)
-        result = resp.json()
-        if result.get('success'):
+        raw_text = resp.text
+        try:
+            result = resp.json()
+        except Exception:
+            result = None
+
+        if isinstance(result, dict) and result.get('success'):
             card = result.get('card', {})
             db.mark_key_used(key_id)
             db.save_card(key_id, card)
@@ -196,10 +201,29 @@ def activate():
             })
         else:
             db.mark_key_failed(key_id)
-            return jsonify({'success': False, 'error': result.get('message', '激活失败'), 'stats': db.get_stats()})
+            message = '激活失败'
+            if isinstance(result, dict):
+                message = result.get('message', message)
+            return jsonify({
+                'success': False,
+                'error': message,
+                'stats': db.get_stats(),
+                'debug': {
+                    'status_code': resp.status_code,
+                    'response': result,
+                    'raw': raw_text[:2000] if raw_text else None
+                }
+            })
     except Exception as e:
         db.mark_key_failed(key_id)
-        return jsonify({'success': False, 'error': str(e), 'stats': db.get_stats()})
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'stats': db.get_stats(),
+            'debug': {
+                'exception': str(e)
+            }
+        })
 
 @app.route('/api/stats')
 @login_required

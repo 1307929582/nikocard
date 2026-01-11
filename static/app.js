@@ -140,18 +140,20 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
                 const data = await resp.json();
 
-                if (data.success) {
-                    showToast('激活成功！', 'success');
-                    displayCard(data.card);
-                    if (data.stats) updateStats(data.stats);
-                    setTimeout(() => location.reload(), 500);
-                } else {
-                    showToast(data.error || '激活失败', 'error');
-                    if (data.stats) updateStats(data.stats);
-                }
-            } catch (e) {
-                showToast('网络错误', 'error');
+            if (data.success) {
+                showToast('激活成功！', 'success');
+                displayCard(data.card);
+                if (data.stats) updateStats(data.stats);
+                setTimeout(() => location.reload(), 500);
+            } else {
+                console.error('激活失败', data);
+                showToast(data.error || '激活失败', 'error');
+                if (data.stats) updateStats(data.stats);
             }
+        } catch (e) {
+            console.error('激活请求异常', e);
+            showToast('网络错误', 'error');
+        }
 
             btnActivate.disabled = false;
             btnActivate.innerHTML = `
