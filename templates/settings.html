@@ -36,88 +36,23 @@
             </section>
 
             <section class="settings-grid">
-                <div class="settings-stack">
-                    <div class="import-panel">
-                        <h2>导入卡密</h2>
-                        <p class="panel-desc">每行一个卡密，支持批量导入。</p>
-                        <div class="field">
-                            <label for="provider-select">选择卡商</label>
-                            {% if providers %}
-                            <select id="provider-select" class="select-control">
-                                {% for p in providers %}
-                                <option value="{{ p.id }}">{{ p.name }}</option>
-                                {% endfor %}
-                            </select>
-                            {% else %}
-                            <div class="empty-hint">暂无卡商，请先创建</div>
-                            {% endif %}
-                        </div>
-                        <textarea id="keys-input" placeholder="每行一个卡密..."></textarea>
-                        <button id="btn-import" class="btn-primary" {% if not providers %}disabled{% endif %}>导入卡密</button>
+                <div class="import-panel">
+                    <h2>导入卡密</h2>
+                    <p class="panel-desc">每行一个卡密，支持批量导入。</p>
+                    <div class="field">
+                        <label for="provider-select">选择卡商</label>
+                        {% if providers %}
+                        <select id="provider-select" class="select-control">
+                            {% for p in providers %}
+                            <option value="{{ p.id }}">{{ p.name }}</option>
+                            {% endfor %}
+                        </select>
+                        {% else %}
+                        <div class="empty-hint">暂无卡商</div>
+                        {% endif %}
                     </div>
-
-                    <div class="provider-panel">
-                        <h2>卡商管理</h2>
-                        <form id="provider-form" class="provider-form">
-                            <div class="field">
-                                <label for="provider-name">卡商名称</label>
-                                <input id="provider-name" type="text" placeholder="例如：卡商A" required>
-                            </div>
-                            <div class="field">
-                                <label for="provider-redeem">激活接口</label>
-                                <input id="provider-redeem" type="url" placeholder="https://..." required>
-                            </div>
-                            <div class="field">
-                                <label for="provider-query">查询接口（可选）</label>
-                                <input id="provider-query" type="url" placeholder="https://...">
-                            </div>
-                            <div class="field">
-                                <label for="provider-address">卡片地址（可选）</label>
-                                <input id="provider-address" type="text" placeholder="例如：41 Glenn Rd C23, East Hartford, CT 06118">
-                            </div>
-                            <button type="submit" class="btn-secondary">创建卡商</button>
-                        </form>
-                    </div>
-
-                    <div class="provider-panel">
-                        <h2>卡商列表</h2>
-                        <div id="provider-list" class="provider-list">
-                            {% if providers %}
-                                {% for p in providers %}
-                                <div class="provider-item" data-id="{{ p.id }}">
-                                    <div class="field">
-                                        <label>卡商名称</label>
-                                        <input type="text" class="provider-name" value="{{ p.name }}" required>
-                                    </div>
-                                    <div class="field">
-                                        <label>激活接口</label>
-                                        <input type="url" class="provider-redeem" value="{{ p.redeem_url }}" required>
-                                    </div>
-                                    <div class="field">
-                                        <label>查询接口</label>
-                                        <input type="url" class="provider-query" value="{{ p.query_url or '' }}">
-                                    </div>
-                                    <div class="field">
-                                        <label>卡片地址</label>
-                                        <input type="text" class="provider-address" value="{{ p.address or '' }}">
-                                    </div>
-                                    <div class="provider-stats">
-                                        <span>未使用 {{ p.unused }}</span>
-                                        <span>已使用 {{ p.used }}</span>
-                                        <span>失败 {{ p.failed }}</span>
-                                        <span>总数 {{ p.total }}</span>
-                                    </div>
-                                    <div class="provider-actions">
-                                        <button class="btn-secondary" data-action="save" type="button">保存</button>
-                                        <button class="btn-danger" data-action="delete" type="button" {% if p.total > 0 %}disabled{% endif %}>删除</button>
-                                    </div>
-                                </div>
-                                {% endfor %}
-                            {% else %}
-                                <div class="empty-hint">暂无卡商</div>
-                            {% endif %}
-                        </div>
-                    </div>
+                    <textarea id="keys-input" placeholder="每行一个卡密..."></textarea>
+                    <button id="btn-import" class="btn-primary" {% if not providers %}disabled{% endif %}>导入卡密</button>
                 </div>
 
                 <div class="settings-panel">

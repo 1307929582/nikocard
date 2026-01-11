@@ -230,6 +230,43 @@ def get_providers():
     conn.close()
     return [dict(row) for row in rows]
 
+def get_providers_by_names(names):
+    if not names:
+        return []
+    conn = get_db()
+    placeholders = ",".join("?" for _ in names)
+    rows = conn.execute(
+        f"SELECT id, name, redeem_url, query_url, address FROM providers WHERE name IN ({placeholders})",
+        names
+    ).fetchall()
+    conn.close()
+    lookup = {row['name']: dict(row) for row in rows}
+    return [lookup[name] for name in names if name in lookup]
+
+def sync_providers(providers):
+    conn = get_db()
+    existing_rows = conn.execute(
+        "SELECT id, name FROM providers"
+    ).fetchall()
+    existing = {row['name']: row['id'] for row in existing_rows}
+    for provider in providers:
+        name = provider['name']
+        redeem_url = provider.get('redeem_url')
+        query_url = provider.get('query_url')
+        address = provider.get('address')
+        if name in existing:
+            conn.execute(
+                "UPDATE providers SET redeem_url = ?, query_url = ?, address = ? WHERE name = ?",
+                (redeem_url, query_url, address, name)
+            )
+        else:
+            conn.execute(
+                "INSERT INTO providers (name, redeem_url, query_url, address) VALUES (?, ?, ?, ?)",
+                (name, redeem_url, query_url, address)
+            )
+    conn.commit()
+    conn.close()
+
 def get_provider_stats():
     conn = get_db()
     rows = conn.execute('''

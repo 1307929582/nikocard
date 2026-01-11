@@ -12,6 +12,23 @@ API_REDEEM = 'https://mercury.wxie.de/api/keys/redeem'
 API_QUERY = 'https://mercury.wxie.de/api/keys/query'
 DEFAULT_ADDRESS = '41 Glenn Rd C23, East Hartford, CT 06118'
 
+HARDCODED_PROVIDERS = [
+    {
+        'name': 'Mercury',
+        'redeem_url': API_REDEEM,
+        'query_url': API_QUERY,
+        'address': '41 Glenn Rd C23, East Hartford, CT 06118'
+    },
+    {
+        'name': 'Timoes',
+        'redeem_url': 'https://timoes.me/api/redeem/view',
+        'query_url': None,
+        'address': '1881 Craigshire Drive Apt 1424, Saint Louis, MO 63146'
+    }
+]
+
+ALLOWED_PROVIDER_NAMES = [p['name'] for p in HARDCODED_PROVIDERS]
+
 def _is_timoes_provider(provider):
     redeem_url = (provider.get('redeem_url') or '').lower()
     return 'timoes.me/api/redeem/view' in redeem_url
@@ -206,7 +223,8 @@ def login_required(f):
 
 @app.before_request
 def before_request():
-    db.init_db(default_provider=('默认卡商', API_REDEEM, API_QUERY, DEFAULT_ADDRESS))
+    db.init_db()
+    db.sync_providers(HARDCODED_PROVIDERS)
 
 @app.route('/')
 def index():
@@ -252,69 +270,14 @@ def dashboard():
     stats = db.get_stats()
     active_card = db.get_active_card()
     cards = _filter_expired(db.get_all_cards())
-    providers = db.get_providers()
+    providers = db.get_providers_by_names(ALLOWED_PROVIDER_NAMES)
     return render_template('dashboard.html', stats=stats, active_card=active_card, cards=cards, providers=providers)
 
 @app.route('/settings')
 @login_required
 def settings():
-    providers = db.get_provider_stats()
+    providers = db.get_providers_by_names(ALLOWED_PROVIDER_NAMES)
     return render_template('settings.html', providers=providers)
-
-@app.route('/api/providers', methods=['POST'])
-@login_required
-def create_provider():
-    data = request.get_json() or {}
-    name = (data.get('name') or '').strip()
-    redeem_url = (data.get('redeem_url') or '').strip()
-    query_url = (data.get('query_url') or '').strip()
-    address = (data.get('address') or '').strip()
-
-    if not name or not redeem_url:
-        return jsonify({'success': False, 'error': '请输入卡商名称和激活接口'})
-
-    try:
-        provider = db.add_provider(name, redeem_url, query_url or None, address or None)
-    except Exception as e:
-        msg = str(e)
-        if 'UNIQUE' in msg:
-            return jsonify({'success': False, 'error': '卡商名称已存在'})
-        return jsonify({'success': False, 'error': msg})
-
-    return jsonify({'success': True, 'provider': provider})
-
-@app.route('/api/providers/<int:provider_id>', methods=['PATCH'])
-@login_required
-def update_provider(provider_id):
-    data = request.get_json() or {}
-    name = (data.get('name') or '').strip()
-    redeem_url = (data.get('redeem_url') or '').strip()
-    query_url = (data.get('query_url') or '').strip()
-    address = (data.get('address') or '').strip()
-
-    if not name or not redeem_url:
-        return jsonify({'success': False, 'error': '请输入卡商名称和激活接口'})
-
-    try:
-        provider = db.update_provider(provider_id, name, redeem_url, query_url or None, address or None)
-    except Exception as e:
-        msg = str(e)
-        if 'UNIQUE' in msg:
-            return jsonify({'success': False, 'error': '卡商名称已存在'})
-        return jsonify({'success': False, 'error': msg})
-
-    if not provider:
-        return jsonify({'success': False, 'error': '卡商不存在'})
-    return jsonify({'success': True, 'provider': provider})
-
-@app.route('/api/providers/<int:provider_id>', methods=['DELETE'])
-@login_required
-def delete_provider(provider_id):
-    try:
-        db.delete_provider(provider_id)
-    except Exception as e:
-        return jsonify({'success': False, 'error': str(e)})
-    return jsonify({'success': True})
 
 @app.route('/api/import', methods=['POST'])
 @login_required
@@ -332,6 +295,8 @@ def import_keys():
     provider = db.get_provider(provider_id)
     if not provider:
         return jsonify({'success': False, 'error': '卡商不存在'})
+    if provider.get('name') not in ALLOWED_PROVIDER_NAMES:
+        return jsonify({'success': False, 'error': '卡商已固定，请选择内置卡商'})
 
     raw_list = keys_text.strip().split('\n') if keys_text else []
     key_list = [key_id.strip() for key_id in raw_list if key_id.strip()]
@@ -380,6 +345,8 @@ def activate():
     provider = db.get_provider(provider_id)
     if not provider:
         return jsonify({'success': False, 'error': '卡商不存在'})
+    if provider.get('name') not in ALLOWED_PROVIDER_NAMES:
+        return jsonify({'success': False, 'error': '卡商已固定，请选择内置卡商'})
     if not provider.get('redeem_url'):
         return jsonify({'success': False, 'error': '卡商未配置激活接口'})
 
@@ -408,6 +375,8 @@ def activate():
                 card = result.get('card', {})
 
             if card:
+                card_address = provider.get('address') or card.get('address')
+                card['address'] = card_address
                 db.mark_key_used(key_id, provider_id)
                 db.save_card(key_id, card)
                 return jsonify({
@@ -419,7 +388,7 @@ def activate():
                         'exp_year': card.get('exp_year'),
                         'card_type': card.get('card_type'),
                         'expire_time': card.get('expire_time'),
-                        'address': card.get('address') or provider.get('address')
+                        'address': card.get('address')
                     },
                     'expire_minutes': result.get('expire_minutes', result.get('remaining_minutes', 60)) if isinstance(result, dict) else 60,
                     'stats': db.get_stats(),
