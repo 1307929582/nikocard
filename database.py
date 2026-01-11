@@ -40,6 +40,7 @@ def init_db(default_provider=None):
             exp_month TEXT,
             exp_year TEXT,
             card_type TEXT,
+            address TEXT,
             expire_time TIMESTAMP,
             activated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (key_id) REFERENCES keys(key_id)
@@ -55,6 +56,7 @@ def init_db(default_provider=None):
     ''')
     _ensure_column(conn, 'keys', 'provider_id', 'provider_id INTEGER')
     _ensure_column(conn, 'providers', 'address', 'address TEXT')
+    _ensure_column(conn, 'cards', 'address', 'address TEXT')
 
     if default_provider:
         if len(default_provider) >= 4:
@@ -184,8 +186,8 @@ def mark_key_failed(key_id, provider_id=None):
 def save_card(key_id, card_data):
     conn = get_db()
     conn.execute('''
-        INSERT INTO cards (key_id, pan, cvv, exp_month, exp_year, card_type, expire_time)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO cards (key_id, pan, cvv, exp_month, exp_year, card_type, address, expire_time)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     ''', (
         key_id,
         card_data.get('pan'),
@@ -193,6 +195,7 @@ def save_card(key_id, card_data):
         card_data.get('exp_month'),
         card_data.get('exp_year'),
         card_data.get('card_type'),
+        card_data.get('address'),
         card_data.get('expire_time')
     ))
     conn.commit()
@@ -201,7 +204,7 @@ def save_card(key_id, card_data):
 def get_active_card():
     conn = get_db()
     row = conn.execute('''
-        SELECT c.*, p.address AS provider_address
+        SELECT c.*, COALESCE(c.address, p.address) AS provider_address
         FROM cards c
         LEFT JOIN keys k ON k.key_id = c.key_id
         LEFT JOIN providers p ON p.id = k.provider_id

@@ -2,7 +2,7 @@ from flask import Flask, render_template, request, redirect, url_for, session, j
 import requests
 import database as db
 from functools import wraps
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 import os
 
 app = Flask(__name__)
@@ -11,6 +11,76 @@ app.secret_key = os.environ.get('SECRET_KEY', os.urandom(24))
 API_REDEEM = 'https://mercury.wxie.de/api/keys/redeem'
 API_QUERY = 'https://mercury.wxie.de/api/keys/query'
 DEFAULT_ADDRESS = '41 Glenn Rd C23, East Hartford, CT 06118'
+
+def _is_timoes_provider(provider):
+    redeem_url = (provider.get('redeem_url') or '').lower()
+    return 'timoes.me/api/redeem/view' in redeem_url
+
+def _build_redeem_payload(provider, key_id):
+    if _is_timoes_provider(provider):
+        return {'code': key_id}
+    return {'key_id': key_id}
+
+def _parse_exp_date(value):
+    if not value or not isinstance(value, str):
+        return None, None
+    text = value.strip()
+    if len(text) >= 10 and text[4] == '-' and text[7] == '-':
+        try:
+            year = text[:4]
+            month = text[5:7]
+            int(year)
+            int(month)
+            return month, year
+        except Exception:
+            return None, None
+    return None, None
+
+def _format_billing_address(addr):
+    if not isinstance(addr, dict):
+        return None
+    street = addr.get('street') or ''
+    apt = addr.get('apt') or ''
+    city = addr.get('city') or ''
+    state = addr.get('state') or ''
+    zip_code = addr.get('zip') or ''
+
+    line1_parts = [street.strip(), apt.strip()]
+    line1 = ' '.join([p for p in line1_parts if p])
+    line2_parts = [city.strip(), state.strip(), zip_code.strip()]
+    line2 = ' '.join([p for p in line2_parts if p])
+    if line1 and line2:
+        return f"{line1}, {line2}"
+    return line1 or line2 or None
+
+def _parse_timoes_card(result):
+    if not isinstance(result, dict):
+        return None
+    pan = result.get('card_number') or result.get('cardNumber')
+    if not pan:
+        return None
+    cvv = result.get('cvc') or result.get('cvv')
+    exp = result.get('exp') or result.get('expiry')
+    exp_month, exp_year = _parse_exp_date(exp)
+    card_type = result.get('card_type') or result.get('type')
+    remaining = result.get('remaining_minutes') or result.get('expire_minutes')
+    expire_time = None
+    if remaining is not None:
+        try:
+            minutes = int(remaining)
+            expire_time = (datetime.utcnow() + timedelta(minutes=minutes)).isoformat() + 'Z'
+        except Exception:
+            expire_time = None
+    address = _format_billing_address(result.get('billing_address'))
+    return {
+        'pan': pan,
+        'cvv': cvv,
+        'exp_month': exp_month,
+        'exp_year': exp_year,
+        'card_type': card_type,
+        'expire_time': expire_time,
+        'address': address
+    }
 
 def _extract_status(payload):
     if not isinstance(payload, dict):
@@ -321,7 +391,7 @@ def activate():
         try:
             resp = requests.post(
                 provider['redeem_url'],
-                json={'key_id': key_id},
+                json=_build_redeem_payload(provider, key_id),
                 headers={'Content-Type': 'application/json'},
                 timeout=30
             )
@@ -331,8 +401,13 @@ def activate():
             except Exception:
                 result = None
 
-            if isinstance(result, dict) and result.get('success'):
+            card = None
+            if _is_timoes_provider(provider):
+                card = _parse_timoes_card(result)
+            elif isinstance(result, dict) and result.get('success'):
                 card = result.get('card', {})
+
+            if card:
                 db.mark_key_used(key_id, provider_id)
                 db.save_card(key_id, card)
                 return jsonify({
@@ -344,9 +419,9 @@ def activate():
                         'exp_year': card.get('exp_year'),
                         'card_type': card.get('card_type'),
                         'expire_time': card.get('expire_time'),
-                        'address': provider.get('address')
+                        'address': card.get('address') or provider.get('address')
                     },
-                    'expire_minutes': result.get('expire_minutes', 60),
+                    'expire_minutes': result.get('expire_minutes', result.get('remaining_minutes', 60)) if isinstance(result, dict) else 60,
                     'stats': db.get_stats(),
                     'skipped_used': skipped
                 })
