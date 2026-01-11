@@ -50,13 +50,15 @@ document.addEventListener('DOMContentLoaded', function() {
         const cvvEl = document.getElementById('card-cvv');
         const expiryEl = document.getElementById('card-expiry');
         const typeEl = document.getElementById('card-type');
-        if (!panEl || !cvvEl || !expiryEl || !typeEl) return;
+        const addressEl = document.getElementById('card-address');
+        if (!panEl || !cvvEl || !expiryEl || !typeEl || !addressEl) return;
 
         panEl.textContent = formatCardNumber(card.pan);
         cvvEl.textContent = card.cvv || '***';
         expiryEl.textContent =
             (card.exp_month || 'MM') + '/' + (card.exp_year ? card.exp_year.slice(-2) : 'YY');
         typeEl.textContent = (card.card_type || 'CREDIT').toUpperCase();
+        addressEl.textContent = card.address || '未配置地址';
 
         startCountdown(card.expire_time);
     }
@@ -193,9 +195,11 @@ document.addEventListener('DOMContentLoaded', function() {
             const nameEl = document.getElementById('provider-name');
             const redeemEl = document.getElementById('provider-redeem');
             const queryEl = document.getElementById('provider-query');
+            const addressEl = document.getElementById('provider-address');
             const name = nameEl ? nameEl.value.trim() : '';
             const redeem = redeemEl ? redeemEl.value.trim() : '';
             const query = queryEl ? queryEl.value.trim() : '';
+            const address = addressEl ? addressEl.value.trim() : '';
 
             if (!name || !redeem) {
                 showToast('请输入卡商名称和激活接口', 'error');
@@ -209,7 +213,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     body: JSON.stringify({
                         name: name,
                         redeem_url: redeem,
-                        query_url: query
+                        query_url: query,
+                        address: address
                     })
                 });
                 const data = await resp.json();
@@ -239,9 +244,11 @@ document.addEventListener('DOMContentLoaded', function() {
             const nameEl = item.querySelector('.provider-name');
             const redeemEl = item.querySelector('.provider-redeem');
             const queryEl = item.querySelector('.provider-query');
+            const addressEl = item.querySelector('.provider-address');
             const name = nameEl ? nameEl.value.trim() : '';
             const redeem = redeemEl ? redeemEl.value.trim() : '';
             const query = queryEl ? queryEl.value.trim() : '';
+            const address = addressEl ? addressEl.value.trim() : '';
 
             if (action === 'save') {
                 if (!name || !redeem) {
@@ -255,7 +262,8 @@ document.addEventListener('DOMContentLoaded', function() {
                         body: JSON.stringify({
                             name: name,
                             redeem_url: redeem,
-                            query_url: query
+                            query_url: query,
+                            address: address
                         })
                     });
                     const data = await resp.json();

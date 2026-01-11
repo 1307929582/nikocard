@@ -49,18 +49,24 @@ def init_db(default_provider=None):
             name TEXT UNIQUE NOT NULL,
             redeem_url TEXT NOT NULL,
             query_url TEXT,
+            address TEXT,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
     ''')
     _ensure_column(conn, 'keys', 'provider_id', 'provider_id INTEGER')
+    _ensure_column(conn, 'providers', 'address', 'address TEXT')
 
     if default_provider:
-        name, redeem_url, query_url = default_provider
+        if len(default_provider) >= 4:
+            name, redeem_url, query_url, address = default_provider[:4]
+        else:
+            name, redeem_url, query_url = default_provider
+            address = None
         existing = conn.execute("SELECT COUNT(*) FROM providers").fetchone()[0]
         if existing == 0:
             conn.execute(
-                "INSERT INTO providers (name, redeem_url, query_url) VALUES (?, ?, ?)",
-                (name, redeem_url, query_url)
+                "INSERT INTO providers (name, redeem_url, query_url, address) VALUES (?, ?, ?, ?)",
+                (name, redeem_url, query_url, address)
             )
         default_row = conn.execute(
             "SELECT id FROM providers ORDER BY id ASC LIMIT 1"
@@ -195,7 +201,12 @@ def save_card(key_id, card_data):
 def get_active_card():
     conn = get_db()
     row = conn.execute('''
-        SELECT * FROM cards ORDER BY activated_at DESC LIMIT 1
+        SELECT c.*, p.address AS provider_address
+        FROM cards c
+        LEFT JOIN keys k ON k.key_id = c.key_id
+        LEFT JOIN providers p ON p.id = k.provider_id
+        ORDER BY c.activated_at DESC
+        LIMIT 1
     ''').fetchone()
     conn.close()
     if row:
@@ -211,7 +222,7 @@ def get_all_cards():
 def get_providers():
     conn = get_db()
     rows = conn.execute(
-        "SELECT id, name, redeem_url, query_url FROM providers ORDER BY id ASC"
+        "SELECT id, name, redeem_url, query_url, address FROM providers ORDER BY id ASC"
     ).fetchall()
     conn.close()
     return [dict(row) for row in rows]
@@ -224,6 +235,7 @@ def get_provider_stats():
             p.name,
             p.redeem_url,
             p.query_url,
+            p.address,
             COALESCE(SUM(CASE WHEN k.status = 'unused' THEN 1 ELSE 0 END), 0) AS unused,
             COALESCE(SUM(CASE WHEN k.status = 'used' THEN 1 ELSE 0 END), 0) AS used,
             COALESCE(SUM(CASE WHEN k.status = 'failed' THEN 1 ELSE 0 END), 0) AS failed,
@@ -239,35 +251,35 @@ def get_provider_stats():
 def get_provider(provider_id):
     conn = get_db()
     row = conn.execute(
-        "SELECT id, name, redeem_url, query_url FROM providers WHERE id = ?",
+        "SELECT id, name, redeem_url, query_url, address FROM providers WHERE id = ?",
         (provider_id,)
     ).fetchone()
     conn.close()
     return dict(row) if row else None
 
-def add_provider(name, redeem_url, query_url=None):
+def add_provider(name, redeem_url, query_url=None, address=None):
     conn = get_db()
     conn.execute(
-        "INSERT INTO providers (name, redeem_url, query_url) VALUES (?, ?, ?)",
-        (name, redeem_url, query_url)
+        "INSERT INTO providers (name, redeem_url, query_url, address) VALUES (?, ?, ?, ?)",
+        (name, redeem_url, query_url, address)
     )
     conn.commit()
     row = conn.execute(
-        "SELECT id, name, redeem_url, query_url FROM providers WHERE name = ?",
+        "SELECT id, name, redeem_url, query_url, address FROM providers WHERE name = ?",
         (name,)
     ).fetchone()
     conn.close()
     return dict(row) if row else None
 
-def update_provider(provider_id, name, redeem_url, query_url=None):
+def update_provider(provider_id, name, redeem_url, query_url=None, address=None):
     conn = get_db()
     conn.execute(
-        "UPDATE providers SET name = ?, redeem_url = ?, query_url = ? WHERE id = ?",
-        (name, redeem_url, query_url, provider_id)
+        "UPDATE providers SET name = ?, redeem_url = ?, query_url = ?, address = ? WHERE id = ?",
+        (name, redeem_url, query_url, address, provider_id)
     )
     conn.commit()
     row = conn.execute(
-        "SELECT id, name, redeem_url, query_url FROM providers WHERE id = ?",
+        "SELECT id, name, redeem_url, query_url, address FROM providers WHERE id = ?",
         (provider_id,)
     ).fetchone()
     conn.close()

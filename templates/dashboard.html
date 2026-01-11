@@ -107,7 +107,7 @@
                         </div>
                         <div class="card-address">
                             <span class="label">地址</span>
-                            <span class="value copyable" id="card-address" data-copy="address">41 Glenn Rd C23, East Hartford, CT 06118</span>
+                            <span class="value copyable" id="card-address" data-copy="address">未配置地址</span>
                         </div>
                     </div>
                     <div class="card-timer">
@@ -152,6 +152,7 @@
             exp_year: "{{ active_card.exp_year }}",
             card_type: "{{ active_card.card_type }}",
             expire_time: "{{ active_card.expire_time }}",
+            address: "{{ active_card.provider_address or '' }}",
             activated_at: "{{ active_card.activated_at }}"
         };
         {% endif %}

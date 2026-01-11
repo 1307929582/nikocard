@@ -10,6 +10,7 @@ app.secret_key = os.environ.get('SECRET_KEY', os.urandom(24))
 
 API_REDEEM = 'https://mercury.wxie.de/api/keys/redeem'
 API_QUERY = 'https://mercury.wxie.de/api/keys/query'
+DEFAULT_ADDRESS = '41 Glenn Rd C23, East Hartford, CT 06118'
 
 def _extract_status(payload):
     if not isinstance(payload, dict):
@@ -135,7 +136,7 @@ def login_required(f):
 
 @app.before_request
 def before_request():
-    db.init_db(default_provider=('默认卡商', API_REDEEM, API_QUERY))
+    db.init_db(default_provider=('默认卡商', API_REDEEM, API_QUERY, DEFAULT_ADDRESS))
 
 @app.route('/')
 def index():
@@ -197,12 +198,13 @@ def create_provider():
     name = (data.get('name') or '').strip()
     redeem_url = (data.get('redeem_url') or '').strip()
     query_url = (data.get('query_url') or '').strip()
+    address = (data.get('address') or '').strip()
 
     if not name or not redeem_url:
         return jsonify({'success': False, 'error': '请输入卡商名称和激活接口'})
 
     try:
-        provider = db.add_provider(name, redeem_url, query_url or None)
+        provider = db.add_provider(name, redeem_url, query_url or None, address or None)
     except Exception as e:
         msg = str(e)
         if 'UNIQUE' in msg:
@@ -218,12 +220,13 @@ def update_provider(provider_id):
     name = (data.get('name') or '').strip()
     redeem_url = (data.get('redeem_url') or '').strip()
     query_url = (data.get('query_url') or '').strip()
+    address = (data.get('address') or '').strip()
 
     if not name or not redeem_url:
         return jsonify({'success': False, 'error': '请输入卡商名称和激活接口'})
 
     try:
-        provider = db.update_provider(provider_id, name, redeem_url, query_url or None)
+        provider = db.update_provider(provider_id, name, redeem_url, query_url or None, address or None)
     except Exception as e:
         msg = str(e)
         if 'UNIQUE' in msg:
@@ -340,7 +343,8 @@ def activate():
                         'exp_month': card.get('exp_month'),
                         'exp_year': card.get('exp_year'),
                         'card_type': card.get('card_type'),
-                        'expire_time': card.get('expire_time')
+                        'expire_time': card.get('expire_time'),
+                        'address': provider.get('address')
                     },
                     'expire_minutes': result.get('expire_minutes', 60),
                     'stats': db.get_stats(),

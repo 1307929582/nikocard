@@ -71,6 +71,10 @@
                                 <label for="provider-query">查询接口（可选）</label>
                                 <input id="provider-query" type="url" placeholder="https://...">
                             </div>
+                            <div class="field">
+                                <label for="provider-address">卡片地址（可选）</label>
+                                <input id="provider-address" type="text" placeholder="例如：41 Glenn Rd C23, East Hartford, CT 06118">
+                            </div>
                             <button type="submit" class="btn-secondary">创建卡商</button>
                         </form>
                     </div>
@@ -92,6 +96,10 @@
                                     <div class="field">
                                         <label>查询接口</label>
                                         <input type="url" class="provider-query" value="{{ p.query_url or '' }}">
+                                    </div>
+                                    <div class="field">
+                                        <label>卡片地址</label>
+                                        <input type="text" class="provider-address" value="{{ p.address or '' }}">
                                     </div>
                                     <div class="provider-stats">
                                         <span>未使用 {{ p.unused }}</span>
