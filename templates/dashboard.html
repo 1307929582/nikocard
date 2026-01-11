@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>仪表盘 - 卡密管理系统</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="dashboard">
+        <header class="header">
+            <div class="header-left">
+                <div class="logo-small">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="1" y="4" width="22" height="16" rx="2" ry="2"/>
+                        <line x1="1" y1="10" x2="23" y2="10"/>
+                    </svg>
+                </div>
+                <h1>卡密管理系统</h1>
+            </div>
+            <a href="{{ url_for('logout') }}" class="btn-logout">退出登录</a>
+        </header>
+
+        <main class="main-content">
+            <section class="stats-section">
+                <div class="stat-card">
+                    <div class="stat-icon unused">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M20 6L9 17l-5-5"/>
+                        </svg>
+                    </div>
+                    <div class="stat-info">
+                        <span class="stat-value" id="stat-unused">{{ stats.unused }}</span>
+                        <span class="stat-label">未使用</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon used">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="1" y="4" width="22" height="16" rx="2" ry="2"/>
+                            <line x1="1" y1="10" x2="23" y2="10"/>
+                        </svg>
+                    </div>
+                    <div class="stat-info">
+                        <span class="stat-value" id="stat-used">{{ stats.used }}</span>
+                        <span class="stat-label">已使用</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon total">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+                        </svg>
+                    </div>
+                    <div class="stat-info">
+                        <span class="stat-value" id="stat-total">{{ stats.total }}</span>
+                        <span class="stat-label">总数</span>
+                    </div>
+                </div>
+            </section>
+
+            <section class="action-section">
+                <div class="import-panel">
+                    <h2>导入卡密</h2>
+                    <textarea id="keys-input" placeholder="每行一个卡密..."></textarea>
+                    <button id="btn-import" class="btn-secondary">导入卡密</button>
+                </div>
+                <div class="activate-panel">
+                    <h2>一键激活</h2>
+                    <p>点击下方按钮自动激活一张卡</p>
+                    <button id="btn-activate" class="btn-activate">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+                        </svg>
+                        激活卡片
+                    </button>
+                </div>
+            </section>
+
+            <section class="card-section" id="active-card-section" style="display: none;">
+                <h2>当前激活卡片</h2>
+                <div class="credit-card" id="active-card">
+                    <div class="card-chip"></div>
+                    <div class="card-type" id="card-type">CREDIT</div>
+                    <div class="card-number" id="card-pan">**** **** **** ****</div>
+                    <div class="card-details">
+                        <div class="card-cvv">
+                            <span class="label">CVV</span>
+                            <span class="value" id="card-cvv">***</span>
+                            <button class="copy-btn" data-copy="cvv" title="复制CVV">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                                </svg>
+                            </button>
+                        </div>
+                        <div class="card-expiry">
+                            <span class="label">有效期</span>
+                            <span class="value" id="card-expiry">MM/YY</span>
+                        </div>
+                    </div>
+                    <div class="card-timer">
+                        <div class="timer-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"/>
+                                <polyline points="12 6 12 12 16 14"/>
+                            </svg>
+                        </div>
+                        <span class="timer-value" id="countdown">60:00</span>
+                    </div>
+                    <button class="copy-card-btn" id="copy-all" title="复制全部信息">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                        </svg>
+                        复制全部
+                    </button>
+                </div>
+            </section>
+
+            <section class="history-section">
+                <h2>历史记录</h2>
+                <div class="cards-list" id="cards-list">
+                    {% for card in cards %}
+                    <div class="history-card">
+                        <div class="history-pan">{{ card.pan }}</div>
+                        <div class="history-details">
+                            <span>CVV: {{ card.cvv }}</span>
+                            <span>有效期: {{ card.exp_month }}/{{ card.exp_year }}</span>
+                        </div>
+                        <div class="history-time">{{ card.activated_at }}</div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script src="{{ url_for('static', filename='app.js') }}"></script>
+    <script>
+        {% if active_card %}
+        window.activeCard = {
+            pan: "{{ active_card.pan }}",
+            cvv: "{{ active_card.cvv }}",
+            exp_month: "{{ active_card.exp_month }}",
+            exp_year: "{{ active_card.exp_year }}",
+            card_type: "{{ active_card.card_type }}",
+            expire_time: "{{ active_card.expire_time }}",
+            activated_at: "{{ active_card.activated_at }}"
+        };
+        {% endif %}
+    </script>
+</body>
+</html>

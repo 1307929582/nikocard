@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>初始设置 - 卡密管理系统</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="auth-page">
+    <div class="auth-container">
+        <div class="auth-card">
+            <div class="auth-header">
+                <div class="logo">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="1" y="4" width="22" height="16" rx="2" ry="2"/>
+                        <line x1="1" y1="10" x2="23" y2="10"/>
+                    </svg>
+                </div>
+                <h1>初始设置</h1>
+                <p>首次使用，请设置管理员密码</p>
+            </div>
+            {% if error %}
+            <div class="error-msg">{{ error }}</div>
+            {% endif %}
+            <form method="POST" class="auth-form">
+                <div class="form-group">
+                    <label for="password">设置密码</label>
+                    <input type="password" id="password" name="password" placeholder="请输入密码（至少4位）" required minlength="4">
+                </div>
+                <div class="form-group">
+                    <label for="confirm">确认密码</label>
+                    <input type="password" id="confirm" name="confirm" placeholder="请再次输入密码" required minlength="4">
+                </div>
+                <button type="submit" class="btn-primary">完成设置</button>
+            </form>
+        </div>
+    </div>
+</body>
+</html>
