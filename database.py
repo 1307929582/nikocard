@@ -7,12 +7,17 @@ DATA_DIR = os.environ.get('DATA_DIR', os.path.dirname(__file__))
 os.makedirs(DATA_DIR, exist_ok=True)
 DB_PATH = os.path.join(DATA_DIR, 'data.db')
 
+def _ensure_column(conn, table, column, ddl):
+    cols = [row[1] for row in conn.execute(f"PRAGMA table_info({table})")]
+    if column not in cols:
+        conn.execute(f"ALTER TABLE {table} ADD COLUMN {ddl}")
+
 def get_db():
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     return conn
 
-def init_db():
+def init_db(default_provider=None):
     conn = get_db()
     conn.executescript('''
         CREATE TABLE IF NOT EXISTS settings (
@@ -39,7 +44,32 @@ def init_db():
             activated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (key_id) REFERENCES keys(key_id)
         );
+        CREATE TABLE IF NOT EXISTS providers (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT UNIQUE NOT NULL,
+            redeem_url TEXT NOT NULL,
+            query_url TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
     ''')
+    _ensure_column(conn, 'keys', 'provider_id', 'provider_id INTEGER')
+
+    if default_provider:
+        name, redeem_url, query_url = default_provider
+        existing = conn.execute("SELECT COUNT(*) FROM providers").fetchone()[0]
+        if existing == 0:
+            conn.execute(
+                "INSERT INTO providers (name, redeem_url, query_url) VALUES (?, ?, ?)",
+                (name, redeem_url, query_url)
+            )
+        default_row = conn.execute(
+            "SELECT id FROM providers ORDER BY id ASC LIMIT 1"
+        ).fetchone()
+        if default_row:
+            conn.execute(
+                "UPDATE keys SET provider_id = ? WHERE provider_id IS NULL",
+                (default_row['id'],)
+            )
     conn.commit()
     conn.close()
 
@@ -79,6 +109,24 @@ def import_keys(key_list):
     conn.close()
     return added
 
+def import_keys_for_provider(key_list, provider_id):
+    conn = get_db()
+    added = 0
+    for key_id in key_list:
+        key_id = key_id.strip()
+        if key_id:
+            try:
+                conn.execute(
+                    "INSERT INTO keys (key_id, provider_id) VALUES (?, ?)",
+                    (key_id, provider_id)
+                )
+                added += 1
+            except sqlite3.IntegrityError:
+                pass
+    conn.commit()
+    conn.close()
+    return added
+
 def get_stats():
     conn = get_db()
     total = conn.execute("SELECT COUNT(*) FROM keys").fetchone()[0]
@@ -88,22 +136,42 @@ def get_stats():
     conn.close()
     return {'total': total, 'unused': unused, 'used': used, 'failed': failed}
 
-def get_unused_key():
+def get_unused_key(provider_id=None):
     conn = get_db()
-    row = conn.execute("SELECT key_id FROM keys WHERE status = 'unused' LIMIT 1").fetchone()
+    if provider_id is None:
+        row = conn.execute("SELECT key_id FROM keys WHERE status = 'unused' LIMIT 1").fetchone()
+    else:
+        row = conn.execute(
+            "SELECT key_id FROM keys WHERE status = 'unused' AND provider_id = ? LIMIT 1",
+            (provider_id,)
+        ).fetchone()
     conn.close()
     return row['key_id'] if row else None
 
-def mark_key_used(key_id):
+def mark_key_used(key_id, provider_id=None):
     conn = get_db()
-    conn.execute("UPDATE keys SET status = 'used', used_at = ? WHERE key_id = ?",
-                 (datetime.utcnow(), key_id))
+    if provider_id is None:
+        conn.execute(
+            "UPDATE keys SET status = 'used', used_at = ? WHERE key_id = ?",
+            (datetime.utcnow(), key_id)
+        )
+    else:
+        conn.execute(
+            "UPDATE keys SET status = 'used', used_at = ? WHERE key_id = ? AND provider_id = ?",
+            (datetime.utcnow(), key_id, provider_id)
+        )
     conn.commit()
     conn.close()
 
-def mark_key_failed(key_id):
+def mark_key_failed(key_id, provider_id=None):
     conn = get_db()
-    conn.execute("UPDATE keys SET status = 'failed' WHERE key_id = ?", (key_id,))
+    if provider_id is None:
+        conn.execute("UPDATE keys SET status = 'failed' WHERE key_id = ?", (key_id,))
+    else:
+        conn.execute(
+            "UPDATE keys SET status = 'failed' WHERE key_id = ? AND provider_id = ?",
+            (key_id, provider_id)
+        )
     conn.commit()
     conn.close()
 
@@ -139,3 +207,34 @@ def get_all_cards():
     rows = conn.execute('SELECT * FROM cards ORDER BY activated_at DESC').fetchall()
     conn.close()
     return [dict(row) for row in rows]
+
+def get_providers():
+    conn = get_db()
+    rows = conn.execute(
+        "SELECT id, name, redeem_url, query_url FROM providers ORDER BY id ASC"
+    ).fetchall()
+    conn.close()
+    return [dict(row) for row in rows]
+
+def get_provider(provider_id):
+    conn = get_db()
+    row = conn.execute(
+        "SELECT id, name, redeem_url, query_url FROM providers WHERE id = ?",
+        (provider_id,)
+    ).fetchone()
+    conn.close()
+    return dict(row) if row else None
+
+def add_provider(name, redeem_url, query_url=None):
+    conn = get_db()
+    conn.execute(
+        "INSERT INTO providers (name, redeem_url, query_url) VALUES (?, ?, ?)",
+        (name, redeem_url, query_url)
+    )
+    conn.commit()
+    row = conn.execute(
+        "SELECT id, name, redeem_url, query_url FROM providers WHERE name = ?",
+        (name,)
+    ).fetchone()
+    conn.close()
+    return dict(row) if row else None

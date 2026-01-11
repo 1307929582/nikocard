@@ -70,9 +70,9 @@ def _interpret_query_result(payload):
         return True
     return None
 
-def _check_key_validity(key_id):
+def _check_key_validity(key_id, query_url):
     try:
-        resp = requests.post(API_QUERY, json={'key_id': key_id},
+        resp = requests.post(query_url, json={'key_id': key_id},
                              headers={'Content-Type': 'application/json'}, timeout=20)
         result = resp.json()
     except Exception:
@@ -89,7 +89,7 @@ def login_required(f):
 
 @app.before_request
 def before_request():
-    db.init_db()
+    db.init_db(default_provider=('默认卡商', API_REDEEM, API_QUERY))
 
 @app.route('/')
 def index():
@@ -135,18 +135,53 @@ def dashboard():
     stats = db.get_stats()
     active_card = db.get_active_card()
     cards = db.get_all_cards()
-    return render_template('dashboard.html', stats=stats, active_card=active_card, cards=cards)
+    providers = db.get_providers()
+    return render_template('dashboard.html', stats=stats, active_card=active_card, cards=cards, providers=providers)
 
 @app.route('/settings')
 @login_required
 def settings():
-    return render_template('settings.html')
+    providers = db.get_providers()
+    return render_template('settings.html', providers=providers)
+
+@app.route('/api/providers', methods=['POST'])
+@login_required
+def create_provider():
+    data = request.get_json() or {}
+    name = (data.get('name') or '').strip()
+    redeem_url = (data.get('redeem_url') or '').strip()
+    query_url = (data.get('query_url') or '').strip()
+
+    if not name or not redeem_url:
+        return jsonify({'success': False, 'error': '请输入卡商名称和激活接口'})
+
+    try:
+        provider = db.add_provider(name, redeem_url, query_url or None)
+    except Exception as e:
+        msg = str(e)
+        if 'UNIQUE' in msg:
+            return jsonify({'success': False, 'error': '卡商名称已存在'})
+        return jsonify({'success': False, 'error': msg})
+
+    return jsonify({'success': True, 'provider': provider})
 
 @app.route('/api/import', methods=['POST'])
 @login_required
 def import_keys():
     data = request.get_json() or {}
     keys_text = data.get('keys', '')
+    provider_id = data.get('provider_id')
+    if provider_id is None:
+        return jsonify({'success': False, 'error': '请选择卡商'})
+    try:
+        provider_id = int(provider_id)
+    except Exception:
+        return jsonify({'success': False, 'error': '卡商参数错误'})
+
+    provider = db.get_provider(provider_id)
+    if not provider:
+        return jsonify({'success': False, 'error': '卡商不存在'})
+
     raw_list = keys_text.strip().split('\n') if keys_text else []
     key_list = [key_id.strip() for key_id in raw_list if key_id.strip()]
 
@@ -156,7 +191,10 @@ def import_keys():
     unchecked = 0
 
     for key_id in key_list:
-        verdict = _check_key_validity(key_id)
+        if provider.get('query_url'):
+            verdict = _check_key_validity(key_id, provider['query_url'])
+        else:
+            verdict = None
         if verdict is True:
             valid_keys.append(key_id)
         elif verdict is False:
@@ -165,7 +203,7 @@ def import_keys():
             unchecked += 1
             unchecked_keys.append(key_id)
 
-    added = db.import_keys(valid_keys + unchecked_keys)
+    added = db.import_keys_for_provider(valid_keys + unchecked_keys, provider_id)
     stats = db.get_stats()
     return jsonify({
         'success': True,
@@ -179,11 +217,26 @@ def import_keys():
 @app.route('/api/activate', methods=['POST'])
 @login_required
 def activate():
-    key_id = db.get_unused_key()
+    data = request.get_json() or {}
+    provider_id = data.get('provider_id')
+    if provider_id is None:
+        return jsonify({'success': False, 'error': '请选择卡商'})
+    try:
+        provider_id = int(provider_id)
+    except Exception:
+        return jsonify({'success': False, 'error': '卡商参数错误'})
+
+    provider = db.get_provider(provider_id)
+    if not provider:
+        return jsonify({'success': False, 'error': '卡商不存在'})
+    if not provider.get('redeem_url'):
+        return jsonify({'success': False, 'error': '卡商未配置激活接口'})
+
+    key_id = db.get_unused_key(provider_id)
     if not key_id:
         return jsonify({'success': False, 'error': '没有可用的卡密'})
     try:
-        resp = requests.post(API_REDEEM, json={'key_id': key_id}, headers={'Content-Type': 'application/json'}, timeout=30)
+        resp = requests.post(provider['redeem_url'], json={'key_id': key_id}, headers={'Content-Type': 'application/json'}, timeout=30)
         raw_text = resp.text
         try:
             result = resp.json()
@@ -192,7 +245,7 @@ def activate():
 
         if isinstance(result, dict) and result.get('success'):
             card = result.get('card', {})
-            db.mark_key_used(key_id)
+            db.mark_key_used(key_id, provider_id)
             db.save_card(key_id, card)
             return jsonify({
                 'success': True,
@@ -208,7 +261,7 @@ def activate():
                 'stats': db.get_stats()
             })
         else:
-            db.mark_key_failed(key_id)
+            db.mark_key_failed(key_id, provider_id)
             message = '激活失败'
             if isinstance(result, dict):
                 message = result.get('message') or result.get('error') or result.get('msg') or message
@@ -223,7 +276,7 @@ def activate():
                 }
             })
     except Exception as e:
-        db.mark_key_failed(key_id)
+        db.mark_key_failed(key_id, provider_id)
         return jsonify({
             'success': False,
             'error': str(e),

@@ -36,12 +36,46 @@
             </section>
 
             <section class="settings-grid">
-                <div class="import-panel">
-                    <h2>导入卡密</h2>
-                    <p class="panel-desc">每行一个卡密，支持批量导入。</p>
-                    <textarea id="keys-input" placeholder="每行一个卡密..."></textarea>
-                    <button id="btn-import" class="btn-primary">导入卡密</button>
+                <div class="settings-stack">
+                    <div class="import-panel">
+                        <h2>导入卡密</h2>
+                        <p class="panel-desc">每行一个卡密，支持批量导入。</p>
+                        <div class="field">
+                            <label for="provider-select">选择卡商</label>
+                            {% if providers %}
+                            <select id="provider-select" class="select-control">
+                                {% for p in providers %}
+                                <option value="{{ p.id }}">{{ p.name }}</option>
+                                {% endfor %}
+                            </select>
+                            {% else %}
+                            <div class="empty-hint">暂无卡商，请先创建</div>
+                            {% endif %}
+                        </div>
+                        <textarea id="keys-input" placeholder="每行一个卡密..."></textarea>
+                        <button id="btn-import" class="btn-primary" {% if not providers %}disabled{% endif %}>导入卡密</button>
+                    </div>
+
+                    <div class="provider-panel">
+                        <h2>卡商管理</h2>
+                        <form id="provider-form" class="provider-form">
+                            <div class="field">
+                                <label for="provider-name">卡商名称</label>
+                                <input id="provider-name" type="text" placeholder="例如：卡商A" required>
+                            </div>
+                            <div class="field">
+                                <label for="provider-redeem">激活接口</label>
+                                <input id="provider-redeem" type="url" placeholder="https://..." required>
+                            </div>
+                            <div class="field">
+                                <label for="provider-query">查询接口（可选）</label>
+                                <input id="provider-query" type="url" placeholder="https://...">
+                            </div>
+                            <button type="submit" class="btn-secondary">创建卡商</button>
+                        </form>
+                    </div>
                 </div>
+
                 <div class="settings-panel">
                     <h2>导入说明</h2>
                     <ul class="settings-list">

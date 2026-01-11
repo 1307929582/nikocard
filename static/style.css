@@ -85,7 +85,8 @@ body::after {
 
 button,
 input,
-textarea {
+textarea,
+select {
     font-family: inherit;
 }
 
@@ -375,6 +376,11 @@ a {
     gap: 24px;
 }
 
+.settings-stack {
+    display: grid;
+    gap: 20px;
+}
+
 .settings-panel {
     background: var(--panel);
     border-radius: 20px;
@@ -383,6 +389,85 @@ a {
     backdrop-filter: blur(16px);
     position: relative;
     overflow: hidden;
+}
+
+.provider-panel {
+    background: var(--panel);
+    border-radius: 20px;
+    padding: 28px;
+    border: 1px solid var(--stroke);
+    backdrop-filter: blur(16px);
+    position: relative;
+    overflow: hidden;
+}
+
+.provider-panel::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at top left, rgba(0, 0, 0, 0.06), transparent 60%);
+    opacity: 0.45;
+    pointer-events: none;
+}
+
+.provider-panel > * {
+    position: relative;
+    z-index: 1;
+}
+
+.provider-form {
+    display: grid;
+    gap: 12px;
+}
+
+.field {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.field label {
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
+.field input,
+.select-control {
+    padding: 12px 14px;
+    border-radius: 12px;
+    border: 1px solid rgba(0, 0, 0, 0.12);
+    background: rgba(255, 255, 255, 0.9);
+    color: var(--text-primary);
+    font-size: 14px;
+}
+
+.field input:focus,
+.select-control:focus {
+    outline: none;
+    border-color: rgba(0, 0, 0, 0.45);
+    box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.08);
+}
+
+.select-control {
+    appearance: none;
+    background-image:
+        linear-gradient(45deg, transparent 50%, rgba(0, 0, 0, 0.45) 50%),
+        linear-gradient(135deg, rgba(0, 0, 0, 0.45) 50%, transparent 50%);
+    background-position:
+        calc(100% - 18px) calc(50% - 3px),
+        calc(100% - 12px) calc(50% - 3px);
+    background-size: 6px 6px;
+    background-repeat: no-repeat;
+    padding-right: 34px;
+}
+
+.empty-hint {
+    font-size: 13px;
+    color: var(--text-secondary);
+    padding: 10px 12px;
+    border-radius: 12px;
+    background: rgba(0, 0, 0, 0.04);
+    border: 1px dashed rgba(0, 0, 0, 0.15);
 }
 
 .settings-panel::before {
@@ -634,6 +719,18 @@ a {
     color: var(--text-secondary);
     font-size: 14px;
     margin-bottom: 22px;
+}
+
+.provider-select {
+    width: 100%;
+    display: grid;
+    gap: 8px;
+    margin-bottom: 18px;
+}
+
+.provider-select label {
+    font-size: 12px;
+    color: var(--text-secondary);
 }
 
 .btn-activate {

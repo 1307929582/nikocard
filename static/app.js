@@ -4,6 +4,9 @@ document.addEventListener('DOMContentLoaded', function() {
     const keysInput = document.getElementById('keys-input');
     const toast = document.getElementById('toast');
     const activeCardSection = document.getElementById('active-card-section');
+    const providerSelect = document.getElementById('provider-select');
+    const activateProvider = document.getElementById('activate-provider');
+    const providerForm = document.getElementById('provider-form');
 
     let countdownInterval = null;
     let currentCard = null;
@@ -93,6 +96,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 showToast('请输入卡密', 'error');
                 return;
             }
+            if (!providerSelect || !providerSelect.value) {
+                showToast('请选择卡商', 'error');
+                return;
+            }
 
             btnImport.disabled = true;
             btnImport.textContent = '导入中...';
@@ -101,7 +108,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 const resp = await fetch('/api/import', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ keys: keys })
+                    body: JSON.stringify({
+                        keys: keys,
+                        provider_id: providerSelect.value
+                    })
                 });
                 const data = await resp.json();
 
@@ -130,13 +140,20 @@ document.addEventListener('DOMContentLoaded', function() {
 
     if (btnActivate) {
         btnActivate.addEventListener('click', async function() {
+            if (!activateProvider || !activateProvider.value) {
+                showToast('请选择卡商', 'error');
+                return;
+            }
             btnActivate.disabled = true;
             btnActivate.innerHTML = '<span class="loading">激活中...</span>';
 
             try {
                 const resp = await fetch('/api/activate', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' }
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        provider_id: activateProvider.value
+                    })
                 });
                 const data = await resp.json();
 
@@ -162,6 +179,44 @@ document.addEventListener('DOMContentLoaded', function() {
                 </svg>
                 激活卡片
             `;
+        });
+    }
+
+    if (providerForm) {
+        providerForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const nameEl = document.getElementById('provider-name');
+            const redeemEl = document.getElementById('provider-redeem');
+            const queryEl = document.getElementById('provider-query');
+            const name = nameEl ? nameEl.value.trim() : '';
+            const redeem = redeemEl ? redeemEl.value.trim() : '';
+            const query = queryEl ? queryEl.value.trim() : '';
+
+            if (!name || !redeem) {
+                showToast('请输入卡商名称和激活接口', 'error');
+                return;
+            }
+
+            try {
+                const resp = await fetch('/api/providers', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        name: name,
+                        redeem_url: redeem,
+                        query_url: query
+                    })
+                });
+                const data = await resp.json();
+                if (data.success) {
+                    showToast('卡商创建成功', 'success');
+                    setTimeout(() => location.reload(), 600);
+                } else {
+                    showToast(data.error || '创建失败', 'error');
+                }
+            } catch (e) {
+                showToast('网络错误', 'error');
+            }
         });
     }
 
