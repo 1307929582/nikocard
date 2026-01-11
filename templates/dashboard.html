@@ -83,21 +83,19 @@
                 <div class="credit-card" id="active-card">
                     <div class="card-chip"></div>
                     <div class="card-type" id="card-type">CREDIT</div>
-                    <div class="card-number" id="card-pan">**** **** **** ****</div>
+                    <div class="card-number copyable" id="card-pan" data-copy="pan">**** **** **** ****</div>
                     <div class="card-details">
                         <div class="card-cvv">
                             <span class="label">CVV</span>
-                            <span class="value" id="card-cvv">***</span>
-                            <button class="copy-btn" data-copy="cvv" title="复制CVV">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
-                                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
-                                </svg>
-                            </button>
+                            <span class="value copyable" id="card-cvv" data-copy="cvv">***</span>
                         </div>
                         <div class="card-expiry">
                             <span class="label">有效期</span>
-                            <span class="value" id="card-expiry">MM/YY</span>
+                            <span class="value copyable" id="card-expiry" data-copy="expiry">MM/YY</span>
+                        </div>
+                        <div class="card-address">
+                            <span class="label">地址</span>
+                            <span class="value copyable" id="card-address" data-copy="address">41 Glenn Rd C23, East Hartford, CT 06118</span>
                         </div>
                     </div>
                     <div class="card-timer">
@@ -109,13 +107,6 @@
                         </div>
                         <span class="timer-value" id="countdown">60:00</span>
                     </div>
-                    <button class="copy-card-btn" id="copy-all" title="复制全部信息">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
-                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
-                        </svg>
-                        复制全部
-                    </button>
                 </div>
             </section>
 

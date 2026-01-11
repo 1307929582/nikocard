@@ -165,27 +165,26 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    document.querySelectorAll('.copy-btn').forEach(btn => {
-        btn.addEventListener('click', function() {
+    document.querySelectorAll('.copyable').forEach(el => {
+        el.addEventListener('click', function() {
             const field = this.dataset.copy;
             let text = '';
-            if (field === 'cvv' && currentCard) {
-                text = currentCard.cvv;
+            if (field === 'pan' && currentCard) {
+                text = currentCard.pan || '';
+            } else if (field === 'cvv' && currentCard) {
+                text = currentCard.cvv || '';
+            } else if (field === 'expiry' && currentCard) {
+                const month = currentCard.exp_month || '';
+                const year = currentCard.exp_year || '';
+                text = month && year ? `${month}/${year}` : '';
+            } else if (field === 'address') {
+                text = this.textContent.trim();
             }
+
             if (text) {
                 navigator.clipboard.writeText(text);
                 showToast('已复制', 'success');
             }
         });
     });
-
-    const copyAllBtn = document.getElementById('copy-all');
-    if (copyAllBtn) {
-        copyAllBtn.addEventListener('click', function() {
-            if (!currentCard) return;
-            const text = `卡号: ${currentCard.pan}\nCVV: ${currentCard.cvv}\n有效期: ${currentCard.exp_month}/${currentCard.exp_year}`;
-            navigator.clipboard.writeText(text);
-            showToast('已复制全部信息', 'success');
-        });
-    }
 });

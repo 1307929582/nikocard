@@ -743,24 +743,18 @@ a {
 }
 
 .card-details {
-    display: flex;
-    gap: 28px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 14px 24px;
     margin-bottom: 20px;
 }
 
 .card-cvv,
-.card-expiry {
+.card-expiry,
+.card-address {
     display: flex;
     flex-direction: column;
     gap: 4px;
-}
-
-.card-cvv {
-    position: relative;
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    gap: 8px;
 }
 
 .card-cvv .label,
@@ -778,28 +772,29 @@ a {
     font-family: var(--font-mono);
 }
 
+.card-address .value {
+    font-size: 14px;
+    font-weight: 500;
+    word-break: break-word;
+}
+
 .card-expiry {
     flex-direction: column;
 }
+.card-address {
+    grid-column: 1 / -1;
+}
 
-.copy-btn {
-    background: rgba(255, 255, 255, 0.8);
-    border: 1px solid rgba(0, 0, 0, 0.2);
-    border-radius: 8px;
-    padding: 6px;
+.copyable {
     cursor: pointer;
-    color: rgba(0, 0, 0, 0.6);
-    transition: all 0.2s;
+    border-radius: 6px;
+    padding: 2px 4px;
+    margin: -2px -4px;
+    transition: background 0.2s, color 0.2s;
 }
 
-.copy-btn:hover {
+.copyable:hover {
     background: rgba(0, 0, 0, 0.06);
-    color: #0b0b0b;
-}
-
-.copy-btn svg {
-    width: 14px;
-    height: 14px;
 }
 
 .card-timer {
@@ -828,32 +823,6 @@ a {
     color: var(--text-primary);
 }
 
-.copy-card-btn {
-    position: absolute;
-    bottom: 26px;
-    right: 26px;
-    background: rgba(255, 255, 255, 0.8);
-    border: 1px solid rgba(0, 0, 0, 0.2);
-    border-radius: 10px;
-    padding: 10px 16px;
-    cursor: pointer;
-    color: rgba(0, 0, 0, 0.75);
-    font-size: 13px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    transition: all 0.2s;
-}
-
-.copy-card-btn:hover {
-    background: rgba(0, 0, 0, 0.06);
-    color: #0b0b0b;
-}
-
-.copy-card-btn svg {
-    width: 16px;
-    height: 16px;
-}
 
 .history-section h2 {
     font-size: 18px;
@@ -998,14 +967,10 @@ a {
     }
 
     .card-details {
-        flex-direction: column;
+        grid-template-columns: 1fr;
         gap: 10px;
     }
 
-    .copy-card-btn {
-        position: static;
-        margin-top: 18px;
-    }
 }
 
 @media (prefers-reduced-motion: reduce) {
