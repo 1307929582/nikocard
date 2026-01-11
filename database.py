@@ -358,6 +358,71 @@ def update_provider(provider_id, name, redeem_url, query_url=None, address=None)
     conn.close()
     return dict(row) if row else None
 
+def get_keys(provider_id=None, status=None, keyword=None, limit=200, offset=0):
+    conn = get_db()
+    base = '''
+        SELECT k.id, k.key_id, k.status, k.created_at, k.used_at, k.provider_id,
+               p.name AS provider_name
+        FROM keys k
+        LEFT JOIN providers p ON p.id = k.provider_id
+    '''
+    conditions = []
+    params = []
+    if provider_id is not None:
+        conditions.append("k.provider_id = ?")
+        params.append(provider_id)
+    if status and status != 'all':
+        conditions.append("k.status = ?")
+        params.append(status)
+    if keyword:
+        conditions.append("k.key_id LIKE ?")
+        params.append(f"%{keyword}%")
+    if conditions:
+        base += " WHERE " + " AND ".join(conditions)
+    base += " ORDER BY k.created_at DESC LIMIT ? OFFSET ?"
+    params.extend([limit, offset])
+    rows = conn.execute(base, params).fetchall()
+    conn.close()
+    return [dict(row) for row in rows]
+
+def count_keys(provider_id=None, status=None, keyword=None):
+    conn = get_db()
+    base = "SELECT COUNT(*) FROM keys"
+    conditions = []
+    params = []
+    if provider_id is not None:
+        conditions.append("provider_id = ?")
+        params.append(provider_id)
+    if status and status != 'all':
+        conditions.append("status = ?")
+        params.append(status)
+    if keyword:
+        conditions.append("key_id LIKE ?")
+        params.append(f"%{keyword}%")
+    if conditions:
+        base += " WHERE " + " AND ".join(conditions)
+    count = conn.execute(base, params).fetchone()[0]
+    conn.close()
+    return count
+
+def delete_keys(ids):
+    if not ids:
+        return 0
+    conn = get_db()
+    placeholders = ",".join("?" for _ in ids)
+    key_rows = conn.execute(
+        f"SELECT key_id FROM keys WHERE id IN ({placeholders})",
+        ids
+    ).fetchall()
+    key_ids = [row['key_id'] for row in key_rows]
+    if key_ids:
+        ph2 = ",".join("?" for _ in key_ids)
+        conn.execute(f"DELETE FROM cards WHERE key_id IN ({ph2})", key_ids)
+    cur = conn.execute(f"DELETE FROM keys WHERE id IN ({placeholders})", ids)
+    conn.commit()
+    conn.close()
+    return cur.rowcount
+
 def delete_provider(provider_id):
     conn = get_db()
     count = conn.execute(

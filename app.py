@@ -281,6 +281,12 @@ def settings():
     providers = db.get_providers_by_names(ALLOWED_PROVIDER_NAMES)
     return render_template('settings.html', providers=providers)
 
+@app.route('/keys')
+@login_required
+def keys():
+    providers = db.get_providers_by_names(ALLOWED_PROVIDER_NAMES)
+    return render_template('keys.html', providers=providers)
+
 @app.route('/api/import', methods=['POST'])
 @login_required
 def import_keys():
@@ -331,6 +337,60 @@ def import_keys():
         'total': len(key_list),
         'stats': stats
     })
+
+@app.route('/api/keys', methods=['GET'])
+@login_required
+def list_keys():
+    provider_id = request.args.get('provider_id')
+    status = request.args.get('status', 'all')
+    keyword = (request.args.get('q') or '').strip()
+    page = request.args.get('page', '1')
+    per_page = request.args.get('per_page', '200')
+
+    try:
+        page = max(int(page), 1)
+    except Exception:
+        page = 1
+    try:
+        per_page = int(per_page)
+    except Exception:
+        per_page = 200
+    per_page = min(max(per_page, 1), 500)
+    offset = (page - 1) * per_page
+
+    if provider_id is not None and provider_id != '':
+        try:
+            provider_id = int(provider_id)
+        except Exception:
+            return jsonify({'success': False, 'error': '卡商参数错误'})
+        provider = db.get_provider(provider_id)
+        if not provider or provider.get('name') not in ALLOWED_PROVIDER_NAMES:
+            return jsonify({'success': False, 'error': '卡商不存在'})
+    else:
+        provider_id = None
+
+    keys = db.get_keys(provider_id=provider_id, status=status, keyword=keyword, limit=per_page, offset=offset)
+    total = db.count_keys(provider_id=provider_id, status=status, keyword=keyword)
+    return jsonify({'success': True, 'keys': keys, 'total': total, 'page': page, 'per_page': per_page})
+
+@app.route('/api/keys/delete', methods=['POST'])
+@login_required
+def delete_keys():
+    data = request.get_json() or {}
+    ids = data.get('ids') or []
+    if not isinstance(ids, list):
+        return jsonify({'success': False, 'error': '参数错误'})
+    clean_ids = []
+    for item in ids:
+        try:
+            clean_ids.append(int(item))
+        except Exception:
+            continue
+    if not clean_ids:
+        return jsonify({'success': False, 'error': '未选择卡密'})
+    deleted = db.delete_keys(clean_ids)
+    stats = db.get_stats()
+    return jsonify({'success': True, 'deleted': deleted, 'stats': stats})
 
 @app.route('/api/activate', methods=['POST'])
 @login_required

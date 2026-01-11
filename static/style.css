@@ -542,6 +542,114 @@ a {
     background: rgba(0, 0, 0, 0.65);
 }
 
+.keys-hero {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    margin-bottom: 22px;
+}
+
+.keys-hero h2 {
+    font-size: 24px;
+    font-weight: 600;
+    margin-bottom: 6px;
+}
+
+.keys-hero p {
+    color: var(--text-secondary);
+    font-size: 14px;
+}
+
+.keys-summary {
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+
+.keys-toolbar {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 16px;
+    align-items: end;
+    margin-bottom: 20px;
+}
+
+.keys-actions {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.keys-table-section {
+    background: var(--panel);
+    border-radius: 18px;
+    padding: 12px;
+    border: 1px solid var(--stroke);
+    backdrop-filter: blur(14px);
+    overflow-x: auto;
+}
+
+.keys-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+
+.keys-table th,
+.keys-table td {
+    padding: 12px 10px;
+    text-align: left;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.keys-table th {
+    color: var(--text-secondary);
+    font-weight: 600;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+}
+
+.keys-table tbody tr:hover {
+    background: rgba(0, 0, 0, 0.03);
+}
+
+.keys-empty {
+    text-align: center;
+    padding: 18px 12px;
+    color: var(--text-secondary);
+}
+
+.keys-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 8px;
+    border-radius: 999px;
+    font-size: 12px;
+    border: 1px solid rgba(0, 0, 0, 0.12);
+    background: rgba(0, 0, 0, 0.04);
+}
+
+.keys-status.unused {
+    border-color: rgba(0, 0, 0, 0.2);
+}
+
+.keys-status.used {
+    background: rgba(0, 0, 0, 0.08);
+}
+
+.keys-status.failed {
+    background: rgba(0, 0, 0, 0.12);
+}
+
+.keys-pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 12px;
+    margin-top: 18px;
+}
+
 .main-content > section:nth-child(2) {
     animation-delay: 0.08s;
 }
@@ -1137,6 +1245,15 @@ a {
 
     .overview-section {
         grid-template-columns: 1fr;
+    }
+
+    .keys-toolbar {
+        grid-template-columns: 1fr;
+    }
+
+    .keys-actions {
+        justify-content: flex-start;
+        flex-wrap: wrap;
     }
 
     .settings-grid {
