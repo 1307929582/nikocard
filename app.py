@@ -2,6 +2,7 @@ from flask import Flask, render_template, request, redirect, url_for, session, j
 import requests
 import database as db
 from functools import wraps
+from datetime import datetime, timezone
 import os
 
 app = Flask(__name__)
@@ -85,6 +86,45 @@ def _check_key_validity(key_id, query_url):
         return None
     return _interpret_query_result(result)
 
+def _parse_expire_time(value):
+    if not value:
+        return None
+    if isinstance(value, (int, float)):
+        return datetime.fromtimestamp(value, tz=timezone.utc)
+    if not isinstance(value, str):
+        return None
+    text = value.strip()
+    if not text:
+        return None
+    if text.isdigit():
+        try:
+            return datetime.fromtimestamp(int(text), tz=timezone.utc)
+        except Exception:
+            return None
+    if text.endswith('Z'):
+        text = text[:-1] + '+00:00'
+    try:
+        return datetime.fromisoformat(text)
+    except Exception:
+        pass
+    for fmt in ('%Y-%m-%d %H:%M:%S', '%Y/%m/%d %H:%M:%S'):
+        try:
+            return datetime.strptime(text, fmt)
+        except Exception:
+            continue
+    return None
+
+def _is_expired(value):
+    dt = _parse_expire_time(value)
+    if not dt:
+        return False
+    if dt.tzinfo is None:
+        return dt <= datetime.utcnow()
+    return dt <= datetime.now(timezone.utc)
+
+def _filter_expired(cards):
+    return [card for card in cards if not _is_expired(card.get('expire_time'))]
+
 def login_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
@@ -140,7 +180,7 @@ def logout():
 def dashboard():
     stats = db.get_stats()
     active_card = db.get_active_card()
-    cards = db.get_all_cards()
+    cards = _filter_expired(db.get_all_cards())
     providers = db.get_providers()
     return render_template('dashboard.html', stats=stats, active_card=active_card, cards=cards, providers=providers)
 
@@ -344,7 +384,7 @@ def get_stats():
 @app.route('/api/cards')
 @login_required
 def get_cards():
-    return jsonify(db.get_all_cards())
+    return jsonify(_filter_expired(db.get_all_cards()))
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5001)
