@@ -267,6 +267,39 @@ def sync_providers(providers):
     conn.commit()
     conn.close()
 
+def rename_provider(old_name, new_name):
+    if old_name == new_name:
+        return False
+    conn = get_db()
+    old_row = conn.execute(
+        "SELECT id FROM providers WHERE name = ?",
+        (old_name,)
+    ).fetchone()
+    if not old_row:
+        conn.close()
+        return False
+    new_row = conn.execute(
+        "SELECT id FROM providers WHERE name = ?",
+        (new_name,)
+    ).fetchone()
+    if new_row:
+        conn.execute(
+            "UPDATE keys SET provider_id = ? WHERE provider_id = ?",
+            (new_row['id'], old_row['id'])
+        )
+        conn.execute(
+            "DELETE FROM providers WHERE id = ?",
+            (old_row['id'],)
+        )
+    else:
+        conn.execute(
+            "UPDATE providers SET name = ? WHERE id = ?",
+            (new_name, old_row['id'])
+        )
+    conn.commit()
+    conn.close()
+    return True
+
 def get_provider_stats():
     conn = get_db()
     rows = conn.execute('''

@@ -14,13 +14,13 @@ DEFAULT_ADDRESS = '41 Glenn Rd C23, East Hartford, CT 06118'
 
 HARDCODED_PROVIDERS = [
     {
-        'name': 'Mercury',
+        'name': 'niko',
         'redeem_url': API_REDEEM,
         'query_url': API_QUERY,
         'address': '41 Glenn Rd C23, East Hartford, CT 06118'
     },
     {
-        'name': 'Timoes',
+        'name': 'timo',
         'redeem_url': 'https://timoes.me/api/redeem/view',
         'query_url': None,
         'address': '1881 Craigshire Drive Apt 1424, Saint Louis, MO 63146'
@@ -224,6 +224,8 @@ def login_required(f):
 @app.before_request
 def before_request():
     db.init_db()
+    db.rename_provider('Mercury', 'niko')
+    db.rename_provider('Timoes', 'timo')
     db.sync_providers(HARDCODED_PROVIDERS)
 
 @app.route('/')
