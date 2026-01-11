@@ -675,8 +675,8 @@ a {
 
 .credit-card {
     background:
-        radial-gradient(circle at top left, rgba(0, 0, 0, 0.08), transparent 55%),
-        linear-gradient(135deg, rgba(255, 255, 255, 0.92) 0%, rgba(242, 242, 242, 0.92) 55%, rgba(235, 235, 235, 0.9) 100%);
+        radial-gradient(circle at 20% 0%, rgba(0, 0, 0, 0.06), transparent 55%),
+        linear-gradient(135deg, rgba(255, 255, 255, 0.94) 0%, rgba(244, 244, 244, 0.92) 55%, rgba(236, 236, 236, 0.9) 100%);
     border-radius: 24px;
     padding: 32px;
     max-width: 460px;
@@ -691,9 +691,9 @@ a {
     content: '';
     position: absolute;
     inset: -120px;
-    background: conic-gradient(from 90deg, rgba(0, 0, 0, 0.06), rgba(0, 0, 0, 0.02), rgba(0, 0, 0, 0.05), rgba(0, 0, 0, 0.06));
-    opacity: 0.35;
-    animation: spin 18s linear infinite;
+    background: conic-gradient(from 90deg, rgba(0, 0, 0, 0.05), rgba(0, 0, 0, 0.02), rgba(0, 0, 0, 0.04), rgba(0, 0, 0, 0.05));
+    opacity: 0.25;
+    animation: spin 22s linear infinite;
 }
 
 .credit-card::after {
@@ -715,12 +715,13 @@ a {
 }
 
 .card-chip {
-    width: 54px;
-    height: 42px;
-    background: linear-gradient(135deg, #0f0f0f, #5a5a5a);
-    border-radius: 10px;
-    margin-bottom: 24px;
-    box-shadow: inset 0 0 10px rgba(255, 255, 255, 0.35);
+    width: 46px;
+    height: 34px;
+    background: linear-gradient(135deg, #f7f7f7, #d7d7d7);
+    border-radius: 9px;
+    margin-bottom: 20px;
+    border: 1px solid rgba(0, 0, 0, 0.18);
+    box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.12);
 }
 
 .card-type {
@@ -735,18 +736,18 @@ a {
 }
 
 .card-number {
-    font-size: 22px;
+    font-size: 21px;
     font-weight: 600;
-    letter-spacing: 3px;
+    letter-spacing: 2.4px;
     margin-bottom: 24px;
     font-family: var(--font-mono);
 }
 
 .card-details {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-    gap: 14px 24px;
-    margin-bottom: 20px;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px 22px;
+    margin-bottom: 18px;
 }
 
 .card-cvv,
@@ -776,6 +777,7 @@ a {
     font-size: 14px;
     font-weight: 500;
     word-break: break-word;
+    color: var(--text-secondary);
 }
 
 .card-expiry {
@@ -790,11 +792,15 @@ a {
     border-radius: 6px;
     padding: 2px 4px;
     margin: -2px -4px;
-    transition: background 0.2s, color 0.2s;
+    transition: background 0.2s, color 0.2s, box-shadow 0.2s;
 }
 
 .copyable:hover {
     background: rgba(0, 0, 0, 0.06);
+}
+
+.copyable:active {
+    box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.2);
 }
 
 .card-timer {
