@@ -18,7 +18,13 @@
                 </div>
                 <h1>卡密管理系统</h1>
             </div>
-            <a href="{{ url_for('logout') }}" class="btn-logout">退出登录</a>
+            <div class="header-right">
+                <nav class="nav">
+                    <a class="nav-link active" href="{{ url_for('dashboard') }}">仪表盘</a>
+                    <a class="nav-link" href="{{ url_for('settings') }}">设置</a>
+                </nav>
+                <a href="{{ url_for('logout') }}" class="btn-logout">退出登录</a>
+            </div>
         </header>
 
         <main class="main-content">
@@ -60,11 +66,6 @@
             </section>
 
             <section class="action-section">
-                <div class="import-panel">
-                    <h2>导入卡密</h2>
-                    <textarea id="keys-input" placeholder="每行一个卡密..."></textarea>
-                    <button id="btn-import" class="btn-secondary">导入卡密</button>
-                </div>
                 <div class="activate-panel">
                     <h2>一键激活</h2>
                     <p>点击下方按钮自动激活一张卡</p>

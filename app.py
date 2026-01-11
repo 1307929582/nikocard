@@ -68,6 +68,11 @@ def dashboard():
     cards = db.get_all_cards()
     return render_template('dashboard.html', stats=stats, active_card=active_card, cards=cards)
 
+@app.route('/settings')
+@login_required
+def settings():
+    return render_template('settings.html')
+
 @app.route('/api/import', methods=['POST'])
 @login_required
 def import_keys():
